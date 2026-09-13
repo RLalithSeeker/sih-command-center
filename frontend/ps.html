@@ -14,9 +14,12 @@
 <div class="card"><table id="t"></table></div>
 <div class="card">
 <h3>One-time: load official SIH list</h3>
-<p class="hint">Copy rows from sih.gov.in problem-statements page, paste one per line as:<br><small>SIHID | title | software/hardware | organisation</small></p>
-<textarea id="bulk" rows="4" style="width:100%" placeholder="SIH25018 | AI crop advisory | software | MoA"></textarea><br><br>
-<button class="ghost" onclick="bulk()">Import list</button> <small id="bm"></small>
+<p class="hint">Needs internet once. Pulls the public table from sih.gov.in (240 statements for 2026).</p>
+<div class="row"><div><select id="edition"><option value="2026">SIH 2026 (240)</option><option value="2025">SIH 2025</option></select></div>
+<div><button onclick="fetchOfficial()">Fetch from sih.gov.in</button></div></div> <small id="fm"></small>
+<p class="hint" style="margin-top:10px">No internet? Paste rows instead, one per line as:<br><small>SIHID | title | software/hardware | organisation</small></p>
+<textarea id="bulk" rows="4" style="width:100%" placeholder="SIH26018 | AI crop advisory | software | MoA"></textarea><br><br>
+<button class="ghost" onclick="bulk()">Import pasted list</button> <small id="bm"></small>
 </div>
 </div>
 <script src="js/app.js"></script>
@@ -42,6 +45,14 @@ async function bulk() {
   const r = await post('/ps/bulk', { lines: document.getElementById('bulk').value });
   document.getElementById('bm').textContent = r.added + ' added, ' + r.total + ' total.';
   load();
+}
+async function fetchOfficial() {
+  document.getElementById('fm').textContent = 'Fetching… (takes ~10 sec)';
+  try {
+    const r = await post('/ps/fetch-official', { edition: document.getElementById('edition').value });
+    document.getElementById('fm').textContent = r.added + ' new, ' + r.skipped + ' already had, ' + r.total + ' total.';
+    load();
+  } catch (e) { document.getElementById('fm').textContent = e.message; }
 }
 load();
 </script></body></html>

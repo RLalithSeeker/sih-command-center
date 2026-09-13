@@ -112,6 +112,28 @@ app.post('/api/ps', (req, res) => {
   db.ps.push(ps);
   mongoSave(); res.json(ps);
 });
+app.post('/api/ps/fetch-official', async (req, res) => {
+  // one-time scrape of the public SIH problem-statement table (no login needed)
+  const edition = clean(req.body.edition) || '2026';
+  const url = `https://sih.gov.in/sih${edition}PS`;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 25000);
+    const html = await (await fetch(url, { signal: ctrl.signal })).text();
+    clearTimeout(timer);
+    let added = 0, skipped = 0;
+    const re = /<td class="colomn_border">\s*\d+\s*<\/td>[\s\S]*?<td class="colomn_border">\s*([^<]+?)\s*<\/td>[\s\S]*?<a style[^>]*>\s*([^<]+?)\s*<\/a>[\s\S]*?<td>(Software|Hardware)<\/td>\s*<td>(SIH\d+)<\/td>/g;
+    let m;
+    while ((m = re.exec(html))) {
+      const [, org, title, cat, num] = m;
+      if (db.ps.find(p => (p.sihId || '').toLowerCase() === num.toLowerCase())) { skipped++; continue; }
+      db.ps.push({ id: nid('ps'), code: num.replace('SIH', 'PS'), sihId: num, title: title.trim(), category: cat.toLowerCase(), org: org.trim() });
+      added++;
+    }
+    mongoSave();
+    res.json({ added, skipped, total: db.ps.length, source: url });
+  } catch (e) { res.status(500).json({ error: 'Could not reach sih.gov.in (' + e.message + '). Use paste-import below instead.' }); }
+});
 app.post('/api/ps/bulk', (req, res) => {
   // paste lines copied from sih.gov.in: SIHID | title | software/hardware | org
   const lines = (req.body.lines || '').split('\n').map(l => l.trim()).filter(Boolean);
