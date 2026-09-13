@@ -111,6 +111,12 @@ app.post('/api/mentors', (req, res) => {
 
 app.get('/api/teams', (req, res) => res.json(db.teams.map(teamView)));
 
+app.get('/api/teams/:id', (req, res) => {
+  const t = db.teams.find(x => x.id === req.params.id);
+  if (!t) return res.status(404).json({ error: 'team not found' });
+  res.json(teamView(t));
+});
+
 app.post('/api/teams', async (req, res) => {
   const { teamName, leadEmail, members } = req.body;
   if (!teamName || !leadEmail) return res.status(400).json({ error: 'teamName and leadEmail required' });

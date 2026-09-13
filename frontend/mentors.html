@@ -1,10 +1,28 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Mentors</title><link rel="stylesheet" href="css/style.css"></head><body>
-<nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
-<div class="wrap"><h2>Mentors (SPOC assigns)</h2><div class="card"><table id="t"></table></div>
-<div class="card"><h3>Assign</h3><input id="teamId" placeholder="team id"><input id="mentorId" placeholder="mentor id (e.g. m1)"><button onclick="assign()">Assign</button> <small id="m"></small></div></div>
+<nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html" class="on">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
+<div class="wrap">
+<h2>Assign a mentor</h2>
+<div class="steps"><div class="step on">Step 1 – See load</div><div class="step">Step 2 – Assign</div></div>
+<div class="card"><table id="t"></table>
+<p><small>Load shows teams per mentor. Full mentors are blocked automatically.</small></p></div>
+<div class="card">
+<p class="hint">Paste ids, press Assign. Done.</p>
+<input id="teamId" placeholder="Step 1: team id (e.g. t100)">
+<input id="mentorId" placeholder="Step 2: mentor id (e.g. m1)">
+<button onclick="assign()">Assign</button> <small id="m"></small>
+</div></div>
 <script src="js/app.js"></script>
 <script>
-async function load(){ const ms = await get('/mentors'); document.getElementById('t').innerHTML = '<tr><th>ID</th><th>Name</th><th>Dept</th><th>Load</th></tr>' + ms.map(x => `<tr><td>${x.id}</td><td>${x.name}</td><td>${x.dept}</td><td>${x.load}/${x.maxTeams}</td></tr>`).join(''); }
-async function assign(){ try{ await post(`/teams/${document.getElementById('teamId').value}/assign-mentor`, { mentorId: document.getElementById('mentorId').value }); document.getElementById('m').textContent='Assigned'; load(); }catch(e){ document.getElementById('m').textContent=e.message; } }
+async function load() {
+  const ms = await get('/mentors');
+  document.getElementById('t').innerHTML = '<tr><th>ID</th><th>Name</th><th>Dept</th><th>Load</th></tr>' +
+    ms.map(x => `<tr><td>${x.id}</td><td>${x.name}</td><td>${x.dept}</td><td>${x.load}/${x.maxTeams}</td></tr>`).join('');
+}
+async function assign() {
+  try {
+    const t = await post(`/teams/${document.getElementById('teamId').value}/assign-mentor`, { mentorId: document.getElementById('mentorId').value });
+    document.getElementById('m').textContent = t.teamName + ' → ' + t.mentorName; load();
+  } catch (e) { document.getElementById('m').textContent = e.message; }
+}
 load();
 </script></body></html>

@@ -1,22 +1,61 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Teams</title><link rel="stylesheet" href="css/style.css"></head><body>
-<nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
-<div class="wrap"><h2>Register team (exactly 6, min 1 female)</h2>
-<div class="card"><input id="tn" placeholder="Team name"><input id="le" placeholder="Lead email">
-<div id="members"></div><button onclick="submitTeam()">Register</button> <small id="msg"></small></div>
-<div class="card"><h3>All teams</h3><div id="list"></div></div></div>
+<!doctype html><html><head><meta charset="utf-8"><title>Teams – step by step</title><link rel="stylesheet" href="css/style.css"></head><body>
+<nav><a href="index.html">Dashboard</a><a href="teams.html" class="on">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
+<div class="wrap">
+<h2>Register a team</h2>
+<div class="steps"><div class="step on" id="s1">Step 1 – Team</div><div class="step" id="s2">Step 2 – Members</div><div class="step" id="s3">Step 3 – Done</div></div>
+<div class="card" id="box1">
+<p class="hint">Start here. One team = exactly 6 members, at least 1 female (SIH rule).</p>
+<input id="tn" placeholder="Team name (e.g. Code Six)">
+<input id="le" placeholder="Lead email (e.g. lead@woxsen.edu)">
+<button onclick="go(2)">Next: members</button> <small id="m1"></small>
+</div>
+<div class="card" id="box2" style="display:none">
+<p class="hint">Add all 6 members. Mark at least one as female.</p>
+<div id="members"></div>
+<button class="ghost" onclick="go(1)">Back</button>
+<button onclick="submitTeam()">Submit team</button> <small id="m2"></small>
+</div>
+<div class="card" id="box3" style="display:none">
+<h3 id="doneTitle">Team saved.</h3>
+<p id="doneBody" class="big"></p>
+<button class="ghost" onclick="go(1)">Register another</button>
+<a href="ps.html"><button>Next: pick problem statement</button></a>
+</div>
+<div class="card"><h3>All teams</h3><div id="list"></div></div>
+</div>
 <script src="js/app.js"></script>
 <script>
 const box = document.getElementById('members');
-box.innerHTML = Array.from({length:6}, (_,i) => `<div class="row"><div><input id="n${i}" placeholder="Member ${i+1} name"></div><div><select id="g${i}"><option value="male">male</option><option value="female">female</option></select></div><div><input id="e${i}" placeholder="email"></div></div>`).join('');
-async function submitTeam() {
-  const members = Array.from({length:6}, (_,i) => ({ name: document.getElementById('n'+i).value || ('M'+(i+1)), gender: document.getElementById('g'+i).value, email: document.getElementById('e'+i).value || `m${i}@woxsen.edu` }));
-  try { await post('/teams', { teamName: document.getElementById('tn').value, leadEmail: document.getElementById('le').value, members }); document.getElementById('msg').textContent = 'Saved.'; load(); }
-  catch(e){ document.getElementById('msg').textContent = e.message; }
+box.innerHTML = Array.from({length: 6}, (_, i) =>
+  `<div class="row"><div><input id="n${i}" placeholder="Member ${i+1} name"></div><div><select id="g${i}"><option value="male">male</option><option value="female">female</option></select></div><div><input id="e${i}" placeholder="email"></div></div>`
+).join('');
+
+function go(n) {
+  [1, 2, 3].forEach(k => {
+    document.getElementById('box' + k).style.display = k === n ? 'block' : 'none';
+    const s = document.getElementById('s' + k);
+    s.className = 'step' + (k === n ? ' on' : k < n ? ' done' : '');
+  });
 }
-async function load(){
+
+async function submitTeam() {
+  const members = Array.from({length: 6}, (_, i) => ({
+    name: document.getElementById('n' + i).value || 'Member ' + (i + 1),
+    gender: document.getElementById('g' + i).value,
+    email: document.getElementById('e' + i).value || 'm' + i + '@woxsen.edu'
+  }));
+  try {
+    const t = await post('/teams', { teamName: document.getElementById('tn').value, leadEmail: document.getElementById('le').value, members });
+    document.getElementById('doneBody').textContent = t.teamName + ' (' + t.id + ') is valid. ' + t.members.length + ' members, composition OK.';
+    go(3); load();
+  } catch (e) { document.getElementById('m2').textContent = e.message; }
+}
+
+async function load() {
   const teams = await get('/teams');
-  document.getElementById('list').innerHTML = teams.map(t => `<p><b>${t.teamName}</b> – ${t.members.length} members – ${t.compositionError || 'valid'} – PS: ${t.psTitle} – Mentor: ${t.mentorName}
-  <br><small>${t.id} | assign via Deliverables page? No – use console/API for PS+mentor in demo.</small></p>`).join('');
+  document.getElementById('list').innerHTML = teams.map(t =>
+    `<p><b>${t.teamName}</b> <small>${t.id}</small> – ${t.compositionError || 'valid'} – PS: ${t.psTitle} – Mentor: ${t.mentorName}</p>`
+  ).join('');
 }
 load();
 </script></body></html>

@@ -1,17 +1,24 @@
-/* student css - one file, simple */
 body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f8; color: #222; }
 nav { background: #1a237e; padding: 10px; }
-nav a { color: white; margin-right: 14px; text-decoration: none; font-size: 15px; }
-nav a:hover { text-decoration: underline; }
-.wrap { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+nav a { color: #c5cae9; margin-right: 14px; text-decoration: none; font-size: 15px; }
+nav a.on { color: white; font-weight: bold; }
+nav a:hover { color: white; }
+.wrap { max-width: 860px; margin: 20px auto; padding: 0 16px; }
 .card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 14px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
 th { background: #e8eaf6; }
-input, select { padding: 7px; margin: 4px 0; width: 100%; box-sizing: border-box; }
-button { background: #1a237e; color: white; border: 0; padding: 8px 14px; border-radius: 5px; cursor: pointer; }
-button:hover { background: #303f9f; }
+input, select { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; }
+button { background: #1a237e; color: white; border: 0; padding: 9px 16px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+button.ghost { background: #e8eaf6; color: #1a237e; }
+button:hover { opacity: 0.9; }
 .badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; }
 .ok { background: #c8e6c9; } .warn { background: #ffecb3; } .bad { background: #ffcdd2; }
 .row { display: flex; gap: 10px; } .row > div { flex: 1; }
 small { color: #666; }
+.steps { display: flex; gap: 8px; margin-bottom: 12px; }
+.step { flex: 1; text-align: center; padding: 8px; border-radius: 6px; background: #e8eaf6; font-size: 13px; }
+.step.on { background: #1a237e; color: white; font-weight: bold; }
+.step.done { background: #c8e6c9; }
+.big { font-size: 15px; }
+.hint { background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 14px; }

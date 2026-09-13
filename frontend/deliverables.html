@@ -1,12 +1,32 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Deliverables</title><link rel="stylesheet" href="css/style.css"></head><body>
-<nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
-<div class="wrap"><h2>Deliverables per team</h2>
-<div class="card"><input id="teamId" placeholder="team id (e.g. t1)"><button onclick="load()">Load</button></div>
-<div class="card"><table id="t"></table></div>
-<div class="card"><h3>Update (SPOC)</h3><select id="dtype"><option value="github">github</option><option value="ppt">ppt</option><option value="video">video</option><option value="report">report</option></select><input id="dlink" placeholder="link"><select id="dstatus"><option>submitted</option><option>approved</option><option>needs_revision</option><option>not_submitted</option></select><button onclick="save()">Save</button></div></div>
+<nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html" class="on">Deliverables</a></nav>
+<div class="wrap">
+<h2>Track deliverables</h2>
+<div class="steps"><div class="step on">Step 1 – Open team</div><div class="step">Step 2 – Update item</div></div>
+<div class="card">
+<input id="teamId" placeholder="Step 1: team id (e.g. t1)">
+<button onclick="load()">Show checklist</button>
+<table id="t" style="margin-top:10px"></table>
+</div>
+<div class="card">
+<p class="hint">Step 2: pick one item, paste link, set status, save. Approved items raise readiness on the dashboard.</p>
+<div class="row"><div><select id="dtype"><option value="github">GitHub repo</option><option value="ppt">PPT deck</option><option value="video">Demo video</option><option value="report">Report</option></select></div>
+<div><select id="dstatus"><option>submitted</option><option>approved</option><option>needs_revision</option><option>not_submitted</option></select></div></div>
+<input id="dlink" placeholder="Link (https://…)">
+<button onclick="save()">Save</button>
+</div></div>
 <script src="js/app.js"></script>
 <script>
-async function load(){ const id = document.getElementById('teamId').value || 't1'; const d = await get('/deliverables/' + id); document.getElementById('t').innerHTML = '<tr><th>Type</th><th>Link</th><th>Status</th></tr>' + d.map(x => `<tr><td>${x.type}</td><td>${x.link || '-'}</td><td>${x.status}</td></tr>`).join(''); }
-async function save(){ const id = document.getElementById('teamId').value || 't1'; await put('/deliverables/' + id, { type: document.getElementById('dtype').value, link: document.getElementById('dlink').value, status: document.getElementById('dstatus').value }); load(); }
+async function load() {
+  const id = document.getElementById('teamId').value || 't1';
+  const d = await get('/deliverables/' + id);
+  document.getElementById('t').innerHTML = '<tr><th>Item</th><th>Link</th><th>Status</th></tr>' +
+    d.map(x => `<tr><td>${x.type}</td><td>${x.link || '– missing'}</td><td>${x.status}</td></tr>`).join('');
+}
+async function save() {
+  const id = document.getElementById('teamId').value || 't1';
+  await put('/deliverables/' + id, { type: document.getElementById('dtype').value, link: document.getElementById('dlink').value, status: document.getElementById('dstatus').value });
+  load();
+}
 load();
 </script></body></html>
