@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Teams</title><link rel="stylesheet" href="css/style.css"></head><body>
+<nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
+<div class="wrap"><h2>Register team (exactly 6, min 1 female)</h2>
+<div class="card"><input id="tn" placeholder="Team name"><input id="le" placeholder="Lead email">
+<div id="members"></div><button onclick="submitTeam()">Register</button> <small id="msg"></small></div>
+<div class="card"><h3>All teams</h3><div id="list"></div></div></div>
+<script src="js/app.js"></script>
+<script>
+const box = document.getElementById('members');
+box.innerHTML = Array.from({length:6}, (_,i) => `<div class="row"><div><input id="n${i}" placeholder="Member ${i+1} name"></div><div><select id="g${i}"><option value="male">male</option><option value="female">female</option></select></div><div><input id="e${i}" placeholder="email"></div></div>`).join('');
+async function submitTeam() {
+  const members = Array.from({length:6}, (_,i) => ({ name: document.getElementById('n'+i).value || ('M'+(i+1)), gender: document.getElementById('g'+i).value, email: document.getElementById('e'+i).value || `m${i}@woxsen.edu` }));
+  try { await post('/teams', { teamName: document.getElementById('tn').value, leadEmail: document.getElementById('le').value, members }); document.getElementById('msg').textContent = 'Saved.'; load(); }
+  catch(e){ document.getElementById('msg').textContent = e.message; }
+}
+async function load(){
+  const teams = await get('/teams');
+  document.getElementById('list').innerHTML = teams.map(t => `<p><b>${t.teamName}</b> – ${t.members.length} members – ${t.compositionError || 'valid'} – PS: ${t.psTitle} – Mentor: ${t.mentorName}
+  <br><small>${t.id} | assign via Deliverables page? No – use console/API for PS+mentor in demo.</small></p>`).join('');
+}
+load();
+</script></body></html>
