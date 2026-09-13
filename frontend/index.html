@@ -25,9 +25,18 @@ async function load() {
     `<p><b>${m.name}</b> – ${m.date} – ` +
     (m.daysLeft < 0 ? `<span class="badge bad">overdue ${-m.daysLeft}d</span>` : m.daysLeft === 0 ? '<span class="badge warn">today</span>' : `<span class="badge ${m.daysLeft <= 7 ? 'warn' : 'ok'}">${m.daysLeft} days left</span>`) +
     `</p>`).join('');
+  const params = new URLSearchParams(location.search);
+  ['fMentor', 'fCat', 'fStatus'].forEach(id => {
+    const map = { fMentor: 'mentor', fCat: 'category', fStatus: 'status' };
+    if (params.get(map[id])) document.getElementById(id).dataset.want = params.get(map[id]);
+  });
   const m = await get('/mentors');
   document.getElementById('fMentor').innerHTML = '<option value="">All</option>' + m.map(x => `<option value="${x.id}">${x.name} (${x.load}/${x.maxTeams})</option>`).join('');
+  ['fMentor', 'fCat', 'fStatus'].forEach(id => {
+    if (document.getElementById(id).dataset.want) document.getElementById(id).value = document.getElementById(id).dataset.want;
+  });
   const q = `?mentor=${document.getElementById('fMentor').value}&category=${document.getElementById('fCat').value}&status=${document.getElementById('fStatus').value}`;
+  history.replaceState(null, '', location.pathname + q);
   const d = await get('/dashboard' + q);
   document.getElementById('t').innerHTML = '<tr><th>Team</th><th>PS</th><th>Mentor</th><th>Check</th><th>Pending items</th><th>Ready</th></tr>' +
     d.teams.map(t => {
