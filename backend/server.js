@@ -26,9 +26,9 @@ const nid = (p) => p + (nextId++);
 
 function seed() {
   db.ps = [
-    { id: 'ps1', code: 'SIH001', title: 'Campus grievance portal', category: 'software', org: 'AICTE' },
-    { id: 'ps2', code: 'SIH002', title: 'Smart classroom attendance', category: 'software', org: 'MoE' },
-    { id: 'ps3', code: 'SIH003', title: 'Low-cost soil sensor', category: 'hardware', org: 'MoA' }
+    { id: 'ps1', code: 'SIH001', sihId: 'SIH25001', title: 'Campus grievance portal', category: 'software', org: 'AICTE' },
+    { id: 'ps2', code: 'SIH002', sihId: 'SIH25002', title: 'Smart classroom attendance', category: 'software', org: 'MoE' },
+    { id: 'ps3', code: 'SIH003', sihId: 'SIH25123', title: 'Low-cost soil sensor', category: 'hardware', org: 'MoA' }
   ];
   db.mentors = [
     { id: 'm1', name: 'Dr. Rao', dept: 'CSE', email: 'rao@woxsen.edu', maxTeams: 3 },
@@ -86,7 +86,7 @@ function teamView(t) {
   const mentor = db.mentors.find(m => m.id === t.mentorId);
   const d = db.deliverables.filter(x => x.teamId === t.id);
   return {
-    ...t, psTitle: ps ? ps.code + ' - ' + ps.title : 'Not selected',
+    ...t, psTitle: ps ? (ps.sihId || ps.code) + ' - ' + ps.title : 'Not selected',
     mentorName: mentor ? mentor.name : 'Not assigned',
     compositionError: checkComposition(t.members),
     deliverables: d, readiness: readiness(t)
@@ -97,17 +97,34 @@ function teamView(t) {
 app.get('/api/health', (req, res) => res.json({ ok: true, mode: useDb ? 'mongo' : 'memory' }));
 
 app.get('/api/ps', (req, res) => {
-  res.json(db.ps.map(p => {
+  const q = clean(req.query.q).toLowerCase();
+  let list = db.ps.map(p => {
     const holder = db.teams.find(t => t.psId === p.id);
     return { ...p, takenBy: holder ? holder.teamName : null };
-  }));
+  });
+  if (q) list = list.filter(p => ((p.sihId || '') + ' ' + p.code + ' ' + p.title + ' ' + p.org).toLowerCase().includes(q));
+  res.json(list);
 });
 app.post('/api/ps', (req, res) => {
-  const { code, title, category, org } = req.body;
+  const { code, title, category, org, sihId } = req.body;
   if (!code || !title) return res.status(400).json({ error: 'code and title required' });
-  const ps = { id: nid('ps'), code, title, category: category || 'software', org: org || 'SIH' };
+  const ps = { id: nid('ps'), code: clean(code), sihId: clean(sihId), title: clean(title), category: clean(category).toLowerCase() || 'software', org: clean(org) || 'SIH' };
   db.ps.push(ps);
-  res.json(ps);
+  mongoSave(); res.json(ps);
+});
+app.post('/api/ps/bulk', (req, res) => {
+  // paste lines copied from sih.gov.in: SIHID | title | software/hardware | org
+  const lines = (req.body.lines || '').split('\n').map(l => l.trim()).filter(Boolean);
+  let added = 0;
+  lines.forEach((l, i) => {
+    const parts = l.split('|').map(s => s.trim());
+    if (parts.length < 2) return;
+    const [sihId, title, category, org] = parts;
+    if (db.ps.find(p => (p.sihId || '').toLowerCase() === sihId.toLowerCase())) return;
+    db.ps.push({ id: nid('ps'), code: 'SIH' + String(100 + db.ps.length + i), sihId, title, category: (category || 'software').toLowerCase(), org: org || 'SIH' });
+    added++;
+  });
+  mongoSave(); res.json({ added, total: db.ps.length });
 });
 
 app.get('/api/mentors', (req, res) => {
@@ -121,7 +138,7 @@ app.post('/api/mentors', (req, res) => {
   if (!name) return res.status(400).json({ error: 'name required' });
   const m = { id: nid('m'), name, dept: dept || 'CSE', email: email || '', maxTeams: 3 };
   db.mentors.push(m);
-  res.json(m);
+  mongoSave(); res.json(m);
 });
 
 app.get('/api/teams', (req, res) => res.json(db.teams.map(teamView)));
@@ -129,7 +146,7 @@ app.get('/api/teams', (req, res) => res.json(db.teams.map(teamView)));
 app.get('/api/teams/:id', (req, res) => {
   const t = db.teams.find(x => x.id === req.params.id);
   if (!t) return res.status(404).json({ error: 'team not found' });
-  res.json(teamView(t));
+  mongoSave(); res.json(teamView(t));
 });
 
 app.post('/api/teams', async (req, res) => {
@@ -143,8 +160,7 @@ app.post('/api/teams', async (req, res) => {
   db.teams.push(t);
   ['github', 'ppt', 'video', 'report'].forEach(type =>
     db.deliverables.push({ teamId: t.id, type, link: '', status: 'not_submitted' }));
-  if (useDb) await Team.create({ ...t, _id: undefined });
-  res.json(teamView(t));
+  mongoSave(); res.json(teamView(t));
 });
 
 app.post('/api/teams/:id/select-ps', (req, res) => {
@@ -155,7 +171,7 @@ app.post('/api/teams/:id/select-ps', (req, res) => {
   const taken = db.teams.find(x => x.psId === psId && x.id !== t.id);
   if (taken && !allowDuplicate) return res.status(400).json({ error: `Already taken by ${taken.teamName}. Tick allowDuplicate to override.` });
   t.psId = psId;
-  res.json(teamView(t));
+  mongoSave(); res.json(teamView(t));
 });
 
 app.post('/api/teams/:id/assign-mentor', (req, res) => {
@@ -166,7 +182,7 @@ app.post('/api/teams/:id/assign-mentor', (req, res) => {
   const load = db.teams.filter(x => x.mentorId === m.id && x.id !== t.id).length;
   if (load >= m.maxTeams) return res.status(400).json({ error: `${m.name} already has ${load} teams (max ${m.maxTeams})` });
   t.mentorId = m.id;
-  res.json(teamView(t));
+  mongoSave(); res.json(teamView(t));
 });
 
 app.post('/api/teams/:id/auto-mentor', (req, res) => {
@@ -176,7 +192,7 @@ app.post('/api/teams/:id/auto-mentor', (req, res) => {
   const m = leastLoadedMentor();
   if (!m) return res.status(400).json({ error: 'All mentors are full' });
   t.mentorId = m.id;
-  res.json(teamView(t));
+  mongoSave(); res.json(teamView(t));
 });
 
 app.get('/api/deliverables/:teamId', (req, res) =>
@@ -191,7 +207,7 @@ app.put('/api/deliverables/:teamId', (req, res) => {
   if (status && !ok.includes(status)) return res.status(400).json({ error: 'bad status' });
   if (link !== undefined) d.link = link;
   if (status) d.status = status;
-  res.json(d);
+  mongoSave(); res.json(d);
 });
 
 app.get('/api/dashboard', (req, res) => {
@@ -221,11 +237,43 @@ app.get('/api/export.csv', (req, res) => {
   res.send(rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n'));
 });
 
+app.get('/api/report.html', (req, res) => {
+  const rows = db.teams.map(teamView).map(t =>
+    `<tr><td>${t.teamName}</td><td>${t.psTitle}</td><td>${t.mentorName}</td><td>${t.readiness}%</td><td>${t.compositionError || 'OK'}</td><td>${t.deliverables.map(d => d.type + ': ' + d.status).join('<br>')}</td></tr>`
+  ).join('');
+  res.header('Content-Type', 'text/html');
+  res.send(`<!doctype html><html><head><meta charset="utf-8"><title>SIH Status Report</title>
+<style>body{font-family:Arial;margin:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:6px;font-size:13px}@media print{button{display:none}}</style>
+</head><body><h2>SIH Command Center – Consolidated Status (${new Date().toLocaleDateString('en-IN')})</h2>
+<button onclick="window.print()">Print / Save as PDF</button><br><br>
+<table><tr><th>Team</th><th>Problem Statement</th><th>Mentor</th><th>Ready</th><th>Team check</th><th>Deliverables</th></tr>${rows}</table>
+<p>Generated for institute records / nodal centre.</p></body></html>`);
+});
+
+const Doc = mongoose.model('Doc', new mongoose.Schema({ key: String, data: mongoose.Schema.Types.Mixed }));
+
+async function mongoLoad() {
+  const docs = await Doc.find({});
+  docs.forEach(d => { if (db[d.key]) db[d.key] = d.data; });
+  if (!db.ps.length) seed();
+  const maxNum = s => Math.max(0, ...['teams', 'ps', 'mentors'].flatMap(k => (db[k] || []).map(x => parseInt((x.id || '').replace(/\D/g, '')) || 0)));
+  nextId = Math.max(nextId, maxNum() + 1);
+}
+
+function mongoSave() {
+  if (!useDb) return;
+  Object.keys(db).forEach(k => Doc.updateOne({ key: k }, { key: k, data: db[k] }, { upsert: true }).exec().catch(() => {}));
+}
+
 async function start() {
   seed();
   if (process.env.MONGO_URI) {
-    try { await mongoose.connect(process.env.MONGO_URI); useDb = true; console.log('Mongo connected'); }
-    catch (e) { console.log('Mongo failed, using memory:', e.message); }
+    try {
+      await mongoose.connect(process.env.MONGO_URI);
+      useDb = true;
+      await mongoLoad();
+      console.log('Mongo connected, data loaded');
+    } catch (e) { console.log('Mongo failed, using memory:', e.message); }
   }
   app.listen(PORT, () => console.log(`SIH backend on http://localhost:${PORT} (${useDb ? 'mongo' : 'memory'})`));
 }

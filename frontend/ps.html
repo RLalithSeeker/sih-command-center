@@ -2,25 +2,34 @@
 <nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html" class="on">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
 <div class="wrap">
 <h2>Pick a problem statement</h2>
-<div class="steps"><div class="step on">Step 1 – Choose team</div><div class="step">Step 2 – Choose PS</div></div>
+<div class="steps"><div class="step on">Step 1 – Find official PS</div><div class="step">Step 2 – Assign to team</div></div>
 <div class="card">
-<p class="hint">Pick from lists, no ids to remember. Taken ones show who holds them.</p>
-<label>Team</label><select id="teamSel"></select>
-<label>Problem statement</label><select id="psSel"></select>
+<p class="hint">Type the official SIH number (e.g. SIH25001 from sih.gov.in) – the list filters itself.</p>
+<label>Step 1: search by SIH number / title</label><input id="q" placeholder="e.g. 25001 or attendance" oninput="load()">
+<label>Step 2: team + PS</label>
+<div class="row"><div><select id="teamSel"></select></div><div><select id="psSel"></select></div></div>
 <label><input type="checkbox" id="dup" style="width:auto"> allow same PS as another team</label><br><br>
 <button onclick="pick()">Save choice</button> <small id="m"></small>
 </div>
 <div class="card"><table id="t"></table></div>
+<div class="card">
+<h3>One-time: load official SIH list</h3>
+<p class="hint">Copy rows from sih.gov.in problem-statements page, paste one per line as:<br><small>SIHID | title | software/hardware | organisation</small></p>
+<textarea id="bulk" rows="4" style="width:100%" placeholder="SIH25018 | AI crop advisory | software | MoA"></textarea><br><br>
+<button class="ghost" onclick="bulk()">Import list</button> <small id="bm"></small>
+</div>
 </div>
 <script src="js/app.js"></script>
 <script>
 async function load() {
   const teams = await get('/teams');
   document.getElementById('teamSel').innerHTML = teams.map(t => `<option value="${t.id}">${t.teamName}</option>`).join('');
-  const ps = await get('/ps');
-  document.getElementById('psSel').innerHTML = ps.map(p => `<option value="${p.id}">${p.code} – ${p.title}${p.takenBy ? ' (taken: ' + p.takenBy + ')' : ''}</option>`).join('');
-  document.getElementById('t').innerHTML = '<tr><th>Code</th><th>Title</th><th>Type</th><th>Org</th><th>Held by</th></tr>' +
-    ps.map(p => `<tr><td>${p.code}</td><td>${p.title}</td><td>${p.category}</td><td>${p.org}</td><td>${p.takenBy || '– free'}</td></tr>`).join('');
+  const q = document.getElementById('q').value;
+  const ps = await get('/ps?q=' + encodeURIComponent(q));
+  document.getElementById('psSel').innerHTML = ps.map(p => `<option value="${p.id}">${p.sihId || p.code} – ${p.title}${p.takenBy ? ' (taken: ' + p.takenBy + ')' : ''}</option>`).join('') || '<option value="">no match – import below</option>';
+  const all = await get('/ps');
+  document.getElementById('t').innerHTML = '<tr><th>SIH No.</th><th>Title</th><th>Type</th><th>Org</th><th>Held by</th></tr>' +
+    all.map(p => `<tr><td>${p.sihId || p.code}</td><td>${p.title}</td><td>${p.category}</td><td>${p.org}</td><td>${p.takenBy || '– free'}</td></tr>`).join('');
 }
 async function pick() {
   try {
@@ -28,6 +37,11 @@ async function pick() {
     document.getElementById('m').textContent = t.teamName + ' now on ' + t.psTitle;
     load();
   } catch (e) { document.getElementById('m').textContent = e.message; }
+}
+async function bulk() {
+  const r = await post('/ps/bulk', { lines: document.getElementById('bulk').value });
+  document.getElementById('bm').textContent = r.added + ' added, ' + r.total + ' total.';
+  load();
 }
 load();
 </script></body></html>
