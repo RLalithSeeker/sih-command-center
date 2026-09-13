@@ -62,6 +62,16 @@ function checkComposition(members) {
   return null;
 }
 
+function clean(s) { return (s || '').trim(); }
+
+function mentorLoad(id) { return db.teams.filter(t => t.mentorId === id).length; }
+
+function leastLoadedMentor() {
+  const free = db.mentors.filter(m => mentorLoad(m.id) < m.maxTeams);
+  free.sort((a, b) => mentorLoad(a.id) - mentorLoad(b.id));
+  return free[0] || null;
+}
+
 function readiness(team) {
   const d = db.deliverables.filter(x => x.teamId === team.id);
   const approved = d.filter(x => x.status === 'approved').length;
@@ -86,7 +96,12 @@ function teamView(t) {
 // ---------- routes ----------
 app.get('/api/health', (req, res) => res.json({ ok: true, mode: useDb ? 'mongo' : 'memory' }));
 
-app.get('/api/ps', (req, res) => res.json(db.ps));
+app.get('/api/ps', (req, res) => {
+  res.json(db.ps.map(p => {
+    const holder = db.teams.find(t => t.psId === p.id);
+    return { ...p, takenBy: holder ? holder.teamName : null };
+  }));
+});
 app.post('/api/ps', (req, res) => {
   const { code, title, category, org } = req.body;
   if (!code || !title) return res.status(400).json({ error: 'code and title required' });
@@ -118,8 +133,10 @@ app.get('/api/teams/:id', (req, res) => {
 });
 
 app.post('/api/teams', async (req, res) => {
-  const { teamName, leadEmail, members } = req.body;
+  let { teamName, leadEmail, members } = req.body;
+  teamName = clean(teamName); leadEmail = clean(leadEmail).toLowerCase();
   if (!teamName || !leadEmail) return res.status(400).json({ error: 'teamName and leadEmail required' });
+  members = (members || []).map(m => ({ name: clean(m.name), gender: clean(m.gender).toLowerCase(), email: clean(m.email).toLowerCase() }));
   const err = checkComposition(members);
   if (err) return res.status(400).json({ error: err }); // hard block, per PBL spec
   const t = { id: nid('t'), teamName, leadEmail, members, psId: null, mentorId: null };
@@ -148,6 +165,16 @@ app.post('/api/teams/:id/assign-mentor', (req, res) => {
   if (!m) return res.status(400).json({ error: 'invalid mentor' });
   const load = db.teams.filter(x => x.mentorId === m.id && x.id !== t.id).length;
   if (load >= m.maxTeams) return res.status(400).json({ error: `${m.name} already has ${load} teams (max ${m.maxTeams})` });
+  t.mentorId = m.id;
+  res.json(teamView(t));
+});
+
+app.post('/api/teams/:id/auto-mentor', (req, res) => {
+  const t = db.teams.find(x => x.id === req.params.id);
+  if (!t) return res.status(404).json({ error: 'team not found' });
+  if (t.mentorId) return res.json(teamView(t));
+  const m = leastLoadedMentor();
+  if (!m) return res.status(400).json({ error: 'All mentors are full' });
   t.mentorId = m.id;
   res.json(teamView(t));
 });

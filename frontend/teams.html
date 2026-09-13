@@ -10,7 +10,7 @@
 <button onclick="go(2)">Next: members</button> <small id="m1"></small>
 </div>
 <div class="card" id="box2" style="display:none">
-<p class="hint">Add all 6 members. Mark at least one as female.</p>
+<p class="hint">Add all 6 members. Lead email is filled in for you – just add the name. At least one female.</p>
 <div id="members"></div>
 <button class="ghost" onclick="go(1)">Back</button>
 <button onclick="submitTeam()">Submit team</button> <small id="m2"></small>
@@ -31,6 +31,9 @@ box.innerHTML = Array.from({length: 6}, (_, i) =>
 ).join('');
 
 function go(n) {
+  if (n === 2 && !document.getElementById('e0').value) {
+    document.getElementById('e0').value = document.getElementById('le').value;
+  }
   [1, 2, 3].forEach(k => {
     document.getElementById('box' + k).style.display = k === n ? 'block' : 'none';
     const s = document.getElementById('s' + k);
@@ -46,7 +49,7 @@ async function submitTeam() {
   }));
   try {
     const t = await post('/teams', { teamName: document.getElementById('tn').value, leadEmail: document.getElementById('le').value, members });
-    document.getElementById('doneBody').textContent = t.teamName + ' (' + t.id + ') is valid. ' + t.members.length + ' members, composition OK.';
+    document.getElementById('doneBody').textContent = t.teamName + ' is valid. ' + t.members.length + ' members, composition OK.';
     go(3); load();
   } catch (e) { document.getElementById('m2').textContent = e.message; }
 }
@@ -54,7 +57,7 @@ async function submitTeam() {
 async function load() {
   const teams = await get('/teams');
   document.getElementById('list').innerHTML = teams.map(t =>
-    `<p><b>${t.teamName}</b> <small>${t.id}</small> – ${t.compositionError || 'valid'} – PS: ${t.psTitle} – Mentor: ${t.mentorName}</p>`
+    `<p><b>${t.teamName}</b> – ${t.compositionError || 'valid'} – PS: ${t.psTitle} – Mentor: ${t.mentorName}</p>`
   ).join('');
 }
 load();

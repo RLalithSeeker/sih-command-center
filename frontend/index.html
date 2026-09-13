@@ -24,7 +24,7 @@ async function load() {
   document.getElementById('t').innerHTML = '<tr><th>Team</th><th>PS</th><th>Mentor</th><th>Check</th><th>Pending items</th><th>Ready</th></tr>' +
     d.teams.map(t => {
       const pending = t.deliverables.filter(x => x.status !== 'approved').map(x => x.type).join(', ') || 'none';
-      return `<tr><td><b>${t.teamName}</b><br><small>${t.id}</small></td><td>${t.psTitle}</td><td>${t.mentorName}</td>
+      return `<tr><td><b>${t.teamName}</b></td><td>${t.psTitle}</td><td>${t.mentorName}</td>
       <td>${t.compositionError ? `<span class="badge bad">${t.compositionError}</span>` : '<span class="badge ok">Team OK</span>'}</td>
       <td>${pending}</td><td><b>${t.readiness}%</b></td></tr>`;
     }).join('');

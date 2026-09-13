@@ -4,12 +4,11 @@
 <h2>Track deliverables</h2>
 <div class="steps"><div class="step on">Step 1 – Open team</div><div class="step">Step 2 – Update item</div></div>
 <div class="card">
-<input id="teamId" placeholder="Step 1: team id (e.g. t1)">
-<button onclick="load()">Show checklist</button>
+<label>Team</label><select id="teamSel" onchange="load()"></select>
 <table id="t" style="margin-top:10px"></table>
 </div>
 <div class="card">
-<p class="hint">Step 2: pick one item, paste link, set status, save. Approved items raise readiness on the dashboard.</p>
+<p class="hint">Pick one item, paste link, set status, save. Approved items raise readiness on the dashboard.</p>
 <div class="row"><div><select id="dtype"><option value="github">GitHub repo</option><option value="ppt">PPT deck</option><option value="video">Demo video</option><option value="report">Report</option></select></div>
 <div><select id="dstatus"><option>submitted</option><option>approved</option><option>needs_revision</option><option>not_submitted</option></select></div></div>
 <input id="dlink" placeholder="Link (https://…)">
@@ -17,16 +16,21 @@
 </div></div>
 <script src="js/app.js"></script>
 <script>
+async function init() {
+  const teams = await get('/teams');
+  document.getElementById('teamSel').innerHTML = teams.map(t => `<option value="${t.id}">${t.teamName} – ${t.readiness}%</option>`).join('');
+  load();
+}
 async function load() {
-  const id = document.getElementById('teamId').value || 't1';
+  const id = document.getElementById('teamSel').value;
+  if (!id) return;
   const d = await get('/deliverables/' + id);
   document.getElementById('t').innerHTML = '<tr><th>Item</th><th>Link</th><th>Status</th></tr>' +
     d.map(x => `<tr><td>${x.type}</td><td>${x.link || '– missing'}</td><td>${x.status}</td></tr>`).join('');
 }
 async function save() {
-  const id = document.getElementById('teamId').value || 't1';
-  await put('/deliverables/' + id, { type: document.getElementById('dtype').value, link: document.getElementById('dlink').value, status: document.getElementById('dstatus').value });
+  await put('/deliverables/' + document.getElementById('teamSel').value, { type: document.getElementById('dtype').value, link: document.getElementById('dlink').value, status: document.getElementById('dstatus').value });
   load();
 }
-load();
+init();
 </script></body></html>
