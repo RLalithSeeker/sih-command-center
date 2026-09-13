@@ -21,7 +21,7 @@ const Team = mongoose.model('Team', teamSchema);
 // ---------- in-memory store (default for demo) ----------
 let useDb = false;
 const db = { teams: [], ps: [], mentors: [], deliverables: [] };
-let nextId = 1;
+let nextId = 100; // starts above seed ids (t1, ps1, m1) so new teams never collide
 const nid = (p) => p + (nextId++);
 
 function seed() {
