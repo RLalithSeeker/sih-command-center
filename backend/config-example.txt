@@ -1,0 +1,4 @@
+PORT=5000
+MONGO_URI=
+# leave MONGO_URI empty to use in-memory store (for review demo)
+# copy this to .env if you want MongoDB: MONGO_URI=mongodb://127.0.0.1:27017/sih
