@@ -4,6 +4,8 @@
 <div class="wrap">
 <h2>SPOC Dashboard</h2>
 <div class="hint">For teachers: 1) check pending teams below, 2) open the team page to fix, 3) export CSV for records. <a href="teams.html">Start with Teams →</a></div>
+<div class="card"><h3>Deadlines</h3><div id="ms"></div>
+<div class="row"><div><input id="msName" placeholder="New milestone (e.g. PPT freeze)"></div><div><input id="msDate" type="date"></div><div><button onclick="addMs()">Add</button></div></div></div>
 <div class="card"><div class="row">
 <div><label>Mentor</label><select id="fMentor"><option value="">All</option></select></div>
 <div><label>Category</label><select id="fCat"><option value="">All</option><option value="software">software</option><option value="hardware">hardware</option></select></div>
@@ -18,6 +20,11 @@
 <script src="js/app.js"></script>
 <script>
 async function load() {
+  const ms = await get('/milestones');
+  document.getElementById('ms').innerHTML = ms.map(m =>
+    `<p><b>${m.name}</b> – ${m.date} – ` +
+    (m.daysLeft < 0 ? `<span class="badge bad">overdue ${-m.daysLeft}d</span>` : m.daysLeft === 0 ? '<span class="badge warn">today</span>' : `<span class="badge ${m.daysLeft <= 7 ? 'warn' : 'ok'}">${m.daysLeft} days left</span>`) +
+    `</p>`).join('');
   const m = await get('/mentors');
   document.getElementById('fMentor').innerHTML = '<option value="">All</option>' + m.map(x => `<option value="${x.id}">${x.name} (${x.load}/${x.maxTeams})</option>`).join('');
   const q = `?mentor=${document.getElementById('fMentor').value}&category=${document.getElementById('fCat').value}&status=${document.getElementById('fStatus').value}`;
@@ -30,6 +37,10 @@ async function load() {
       <td>${pending}</td><td><b>${t.readiness}%</b></td></tr>`;
     }).join('');
   document.getElementById('rem').innerHTML = d.pendingReminders.map(r => `<p><b>${r.team}</b> (${r.lead}) – waiting on: ${r.missing.join(', ')}</p>`).join('') || '<p>All teams ready.</p>';
+}
+async function addMs() {
+  await post('/milestones', { name: document.getElementById('msName').value, date: document.getElementById('msDate').value });
+  load();
 }
 load();
 </script></body></html>

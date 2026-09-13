@@ -20,7 +20,7 @@ const Team = mongoose.model('Team', teamSchema);
 
 // ---------- in-memory store (default for demo) ----------
 let useDb = false;
-const db = { teams: [], ps: [], mentors: [], deliverables: [] };
+const db = { teams: [], ps: [], mentors: [], deliverables: [], milestones: [] };
 let nextId = 100; // starts above seed ids (t1, ps1, m1) so new teams never collide
 const nid = (p) => p + (nextId++);
 
@@ -51,6 +51,12 @@ function seed() {
     { teamId: 't1', type: 'ppt', link: 'https://drive/demo.pptx', status: 'submitted' },
     { teamId: 't1', type: 'video', link: '', status: 'not_submitted' },
     { teamId: 't1', type: 'report', link: '', status: 'not_submitted' }
+  ];
+  const inDays = n => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+  db.milestones = [
+    { id: 'ms1', name: 'Internal hackathon', date: inDays(14) },
+    { id: 'ms2', name: 'Idea submission (SIH portal)', date: inDays(30) },
+    { id: 'ms3', name: 'Grand finale', date: inDays(90) }
   ];
 }
 
@@ -232,6 +238,20 @@ app.put('/api/deliverables/:teamId', (req, res) => {
   mongoSave(); res.json(d);
 });
 
+app.get('/api/milestones', (req, res) => {
+  const today = new Date().setHours(0, 0, 0, 0);
+  res.json(db.milestones.map(m => ({
+    ...m, daysLeft: Math.ceil((new Date(m.date) - today) / 864e5)
+  })));
+});
+app.post('/api/milestones', (req, res) => {
+  const { name, date } = req.body;
+  if (!name || !date || isNaN(new Date(date))) return res.status(400).json({ error: 'name and valid date (YYYY-MM-DD) required' });
+  const m = { id: nid('ms'), name: clean(name), date };
+  db.milestones.push(m);
+  mongoSave(); res.json(m);
+});
+
 app.get('/api/dashboard', (req, res) => {
   const { mentor, category, status } = req.query;
   let teams = db.teams.map(teamView);
@@ -278,7 +298,7 @@ async function mongoLoad() {
   const docs = await Doc.find({});
   docs.forEach(d => { if (db[d.key]) db[d.key] = d.data; });
   if (!db.ps.length) seed();
-  const maxNum = s => Math.max(0, ...['teams', 'ps', 'mentors'].flatMap(k => (db[k] || []).map(x => parseInt((x.id || '').replace(/\D/g, '')) || 0)));
+  const maxNum = () => Math.max(0, ...['teams', 'ps', 'mentors', 'milestones'].flatMap(k => (db[k] || []).map(x => parseInt((x.id || '').replace(/\D/g, '')) || 0)));
   nextId = Math.max(nextId, maxNum() + 1);
 }
 
