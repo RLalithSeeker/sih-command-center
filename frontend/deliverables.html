@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Deliverables</title><link rel="stylesheet" href="css/style.css"></head><body>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Deliverables</title><link rel="stylesheet" href="css/style.css"></head><body>
 <nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html" class="on">Deliverables</a></nav>
 <div class="wrap">
 <h2>Track deliverables</h2>
@@ -17,20 +17,28 @@
 <script src="js/app.js"></script>
 <script>
 async function init() {
+  try {
   const teams = await get('/teams');
-  document.getElementById('teamSel').innerHTML = teams.map(t => `<option value="${t.id}">${t.teamName} – ${t.readiness}%</option>`).join('');
+  document.getElementById('teamSel').innerHTML = teams.map(t => `<option value="${esc(t.id)}">${esc(t.teamName)} – ${t.readiness}%</option>`).join('');
   load();
+  } catch (e) { loadFailed('t', e); }
 }
 async function load() {
   const id = document.getElementById('teamSel').value;
   if (!id) return;
+  try {
   const d = await get('/deliverables/' + id);
   document.getElementById('t').innerHTML = '<tr><th>Item</th><th>Link</th><th>Status</th></tr>' +
-    d.map(x => `<tr><td>${x.type}</td><td>${x.link || '– missing'}</td><td>${x.status}</td></tr>`).join('');
+    d.map(x => `<tr><td>${esc(x.type)}</td><td>${/^https?:\/\//.test(x.link || '') ? '<a href="' + esc(x.link) + '" target="_blank">' + esc(x.link) + '</a>' : (x.link ? esc(x.link) : '– missing')}</td><td>${esc(x.status)}</td></tr>`).join('');
+  } catch (e) { loadFailed('t', e); }
 }
 async function save() {
-  await put('/deliverables/' + document.getElementById('teamSel').value, { type: document.getElementById('dtype').value, link: document.getElementById('dlink').value, status: document.getElementById('dstatus').value });
-  load();
+  const fb = document.getElementById('dlink');
+  try {
+    await put('/deliverables/' + document.getElementById('teamSel').value, { type: document.getElementById('dtype').value, link: document.getElementById('dlink').value, status: document.getElementById('dstatus').value });
+    fb.value = ''; fb.placeholder = 'Saved ✓';
+    load();
+  } catch (e) { fb.placeholder = e.message; }
 }
 init();
 </script></body></html>

@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Teams – step by step</title><link rel="stylesheet" href="css/style.css"></head><body>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Teams – step by step</title><link rel="stylesheet" href="css/style.css"></head><body>
 <nav><a href="index.html">Dashboard</a><a href="teams.html" class="on">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
 <div class="wrap">
 <h2>Register a team</h2>
@@ -55,10 +55,12 @@ async function submitTeam() {
 }
 
 async function load() {
+  try {
   const teams = await get('/teams');
   document.getElementById('list').innerHTML = teams.map(t =>
-    `<p><b>${t.teamName}</b> – ${t.compositionError || 'valid'} – PS: ${t.psTitle} – Mentor: ${t.mentorName}</p>`
+    `<p><b>${esc(t.teamName)}</b> – ${esc(t.compositionError || 'valid')} – PS: ${esc(t.psTitle)} – Mentor: ${esc(t.mentorName)}</p>`
   ).join('');
+  } catch (e) { loadFailed('list', e); }
 }
 load();
 </script></body></html>

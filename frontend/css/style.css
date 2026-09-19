@@ -22,3 +22,19 @@ small { color: #666; }
 .step.done { background: #c8e6c9; }
 .big { font-size: 15px; }
 .hint { background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 14px; }
+
+/* mobile: stack rows, keep tables scrollable, comfortable tap targets */
+@media (max-width: 640px) {
+  nav { padding: 8px; }
+  nav a { display: inline-block; margin: 4px 8px 4px 0; font-size: 14px; padding: 6px 2px; }
+  .wrap { margin: 10px auto; padding: 0 10px; }
+  .card { padding: 12px; overflow-x: auto; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .row { flex-direction: column; gap: 0; }
+  .steps { flex-direction: column; }
+  input, select, button { min-height: 44px; font-size: 16px; }
+  button { width: 100%; margin: 6px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

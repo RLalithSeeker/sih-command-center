@@ -68,7 +68,7 @@ function checkComposition(members) {
   return null;
 }
 
-function clean(s) { return (s || '').trim(); }
+function clean(s) { return String(s == null ? '' : s).trim(); }
 
 function mentorLoad(id) { return db.teams.filter(t => t.mentorId === id).length; }
 
@@ -178,10 +178,11 @@ app.get('/api/teams/:id', (req, res) => {
 });
 
 app.post('/api/teams', async (req, res) => {
-  let { teamName, leadEmail, members } = req.body;
+  let { teamName, leadEmail, members } = req.body || {};
   teamName = clean(teamName); leadEmail = clean(leadEmail).toLowerCase();
   if (!teamName || !leadEmail) return res.status(400).json({ error: 'teamName and leadEmail required' });
-  members = (members || []).map(m => ({ name: clean(m.name), gender: clean(m.gender).toLowerCase(), email: clean(m.email).toLowerCase() }));
+  if (!Array.isArray(members)) return res.status(400).json({ error: 'members must be an array' });
+  members = members.map(m => ({ name: clean(m && m.name), gender: clean(m && m.gender).toLowerCase(), email: clean(m && m.email).toLowerCase() }));
   const err = checkComposition(members);
   if (err) return res.status(400).json({ error: err }); // hard block, per PBL spec
   const t = { id: nid('t'), teamName, leadEmail, members, psId: null, mentorId: null };
@@ -281,7 +282,7 @@ app.get('/api/export.csv', (req, res) => {
 
 app.get('/api/report.html', (req, res) => {
   const rows = db.teams.map(teamView).map(t =>
-    `<tr><td>${t.teamName}</td><td>${t.psTitle}</td><td>${t.mentorName}</td><td>${t.readiness}%</td><td>${t.compositionError || 'OK'}</td><td>${t.deliverables.map(d => d.type + ': ' + d.status).join('<br>')}</td></tr>`
+    `<tr><td>${esc(t.teamName)}</td><td>${esc(t.psTitle)}</td><td>${esc(t.mentorName)}</td><td>${t.readiness}%</td><td>${esc(t.compositionError || 'OK')}</td><td>${t.deliverables.map(d => esc(d.type) + ': ' + esc(d.status)).join('<br>')}</td></tr>`
   ).join('');
   res.header('Content-Type', 'text/html');
   res.send(`<!doctype html><html><head><meta charset="utf-8"><title>SIH Status Report</title>
@@ -292,7 +293,21 @@ app.get('/api/report.html', (req, res) => {
 <p>Generated for institute records / nodal centre.</p></body></html>`);
 });
 
+// global error handler - malformed payloads return 400/500 JSON, never crash the server
+app.use((err, req, res, next) => {
+  if (err && err.type === 'entity.parse.failed') return res.status(400).json({ error: 'invalid JSON body' });
+  if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'payload too large' });
+  console.error('Unhandled error:', err && err.message);
+  res.status(500).json({ error: 'server error' });
+});
+
 const Doc = mongoose.model('Doc', new mongoose.Schema({ key: String, data: mongoose.Schema.Types.Mixed }));
+
+// escape user-supplied text before embedding in report HTML (prevents XSS)
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 
 async function mongoLoad() {
   const docs = await Doc.find({});
@@ -317,6 +332,7 @@ async function start() {
       console.log('Mongo connected, data loaded');
     } catch (e) { console.log('Mongo failed, using memory:', e.message); }
   }
+  process.on('unhandledRejection', e => console.error('Unhandled rejection:', e && e.message));
   app.listen(PORT, () => console.log(`SIH backend on http://localhost:${PORT} (${useDb ? 'mongo' : 'memory'})`));
 }
 start();

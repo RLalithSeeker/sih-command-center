@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><title>SIH Command Center</title>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SIH Command Center</title>
 <link rel="stylesheet" href="css/style.css"></head><body>
 <nav><a href="index.html" class="on">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
 <div class="wrap">
@@ -20,9 +20,10 @@
 <script src="js/app.js"></script>
 <script>
 async function load() {
+  try {
   const ms = await get('/milestones');
   document.getElementById('ms').innerHTML = ms.map(m =>
-    `<p><b>${m.name}</b> – ${m.date} – ` +
+    `<p><b>${esc(m.name)}</b> – ${esc(m.date)} – ` +
     (m.daysLeft < 0 ? `<span class="badge bad">overdue ${-m.daysLeft}d</span>` : m.daysLeft === 0 ? '<span class="badge warn">today</span>' : `<span class="badge ${m.daysLeft <= 7 ? 'warn' : 'ok'}">${m.daysLeft} days left</span>`) +
     `</p>`).join('');
   const params = new URLSearchParams(location.search);
@@ -31,7 +32,7 @@ async function load() {
     if (params.get(map[id])) document.getElementById(id).dataset.want = params.get(map[id]);
   });
   const m = await get('/mentors');
-  document.getElementById('fMentor').innerHTML = '<option value="">All</option>' + m.map(x => `<option value="${x.id}">${x.name} (${x.load}/${x.maxTeams})</option>`).join('');
+  document.getElementById('fMentor').innerHTML = '<option value="">All</option>' + m.map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${x.load}/${x.maxTeams})</option>`).join('');
   ['fMentor', 'fCat', 'fStatus'].forEach(id => {
     if (document.getElementById(id).dataset.want) document.getElementById(id).value = document.getElementById(id).dataset.want;
   });
@@ -40,16 +41,21 @@ async function load() {
   const d = await get('/dashboard' + q);
   document.getElementById('t').innerHTML = '<tr><th>Team</th><th>PS</th><th>Mentor</th><th>Check</th><th>Pending items</th><th>Ready</th></tr>' +
     d.teams.map(t => {
-      const pending = t.deliverables.filter(x => x.status !== 'approved').map(x => x.type).join(', ') || 'none';
-      return `<tr><td><b>${t.teamName}</b></td><td>${t.psTitle}</td><td>${t.mentorName}</td>
-      <td>${t.compositionError ? `<span class="badge bad">${t.compositionError}</span>` : '<span class="badge ok">Team OK</span>'}</td>
+      const pending = t.deliverables.filter(x => x.status !== 'approved').map(x => esc(x.type)).join(', ') || 'none';
+      return `<tr><td><b>${esc(t.teamName)}</b></td><td>${esc(t.psTitle)}</td><td>${esc(t.mentorName)}</td>
+      <td>${t.compositionError ? `<span class="badge bad">${esc(t.compositionError)}</span>` : '<span class="badge ok">Team OK</span>'}</td>
       <td>${pending}</td><td><b>${t.readiness}%</b></td></tr>`;
     }).join('');
-  document.getElementById('rem').innerHTML = d.pendingReminders.map(r => `<p><b>${r.team}</b> (${r.lead}) – waiting on: ${r.missing.join(', ')}</p>`).join('') || '<p>All teams ready.</p>';
+  document.getElementById('rem').innerHTML = d.pendingReminders.map(r => `<p><b>${esc(r.team)}</b> (${esc(r.lead)}) – waiting on: ${r.missing.map(esc).join(', ')}</p>`).join('') || '<p>All teams ready.</p>';
+  } catch (e) { loadFailed('t', e); loadFailed('ms', e); }
 }
 async function addMs() {
-  await post('/milestones', { name: document.getElementById('msName').value, date: document.getElementById('msDate').value });
-  load();
+  const btnFeedback = document.getElementById('msName');
+  try {
+    await post('/milestones', { name: document.getElementById('msName').value, date: document.getElementById('msDate').value });
+    btnFeedback.value = '';
+    load();
+  } catch (e) { btnFeedback.placeholder = e.message; btnFeedback.value = ''; }
 }
 load();
 </script></body></html>
