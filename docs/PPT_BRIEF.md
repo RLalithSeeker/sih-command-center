@@ -1,130 +1,145 @@
-# PPT BRIEF — SIH Command Center Technical Presentation
+# PPT BRIEF — SIH Command Center (general audience version)
 
-Use this file as the single source of truth for generating the slide deck
-(viva / submission). Everything an AI slide generator needs is here.
-Output: 8 slides, 16:9 (13.333 × 7.5 in / 1920×1080).
+Source of truth for generating the presentation deck. Audience: faculty examiners
+and SPOC stakeholders — explain WHAT and WHY in plain language, not implementation
+detail. Output: 8 slides, 16:9.
 
----
+## 1. Tone rules (most important)
 
-## 1. Design system (apply to every slide)
+- Write for a smart non-programmer. If a term needs a CS degree, replace it with plain words.
+- Good: "The app rejects a team of 5 — the rule is enforced before anything is saved."
+- Bad: "Array.isArray guard + global Express error interceptor."
+- One idea per bullet, max 14 words. No acronyms without a one-word gloss.
+- Numbers are fine and impressive: 242 statements, 105 tests, 450 requests/sec.
+- Never show code, file names, framework internals, or Git history.
 
-| Token | Value | Use |
+## 2. Design system
+
+| Token | Value |
+|---|---|
+| Paper / card background | `#F6F1E7` paper, `#FFFDF8` cards |
+| Headings | deep navy `#1E2A4A`, Georgia serif |
+| Accent | brass `#A96B1B` (eyebrow labels, thin rules) |
+| Body text | `#334155`, system sans, sentence case |
+| Green `#2F7D4F` | guarantees, passing results |
+| Red `#B3352B` | problems, blocked actions |
+| Data (numbers, IDs) | monospace |
+| Title slide | navy `#0F172A` full-bleed, white text |
+| Layout | max 4 cards per slide, max 5 short bullets per card, 10pt floor |
+| Imagery | only the app screenshots listed below — no clip-art, no stock photos, no emoji |
+
+## 3. Screenshots to embed (ready in `report/shots/`)
+
+| # | File | Shows |
 |---|---|---|
-| Background | `#FFFDF8` (white cards) on `#F6F1E7` paper | slide base |
-| Primary | `#1E2A4A` (deep navy) | headings, card titles |
-| Accent | `#A96B1B` (brass) | eyebrow labels, rules, highlights |
-| Body text | `#334155` | bullets |
-| Success | `#2F7D4F` | verified/guarantee items |
-| Danger | `#B3352B` | problem/risk items |
-| Display font | Georgia (serif) | slide titles + card titles |
-| Body font | system sans (Segoe UI / Arial) | bullets |
-| Data font | monospace (Consolas) | metrics, schema, code |
-| Title slide only | navy `#0F172A` full-bleed background, white text | slide 1 |
-| Eyebrow | 10pt mono uppercase, brass, above title | every content slide |
-| Card style | rounded rect, 1px `#E3DCCB` border, white fill | content blocks |
+| 1 | `phase1-dashboard.png` | Dashboard: deadlines with countdowns + team readiness dials |
+| 2 | `phase2-dashboard-filtered.png` | Dashboard filtered to "Ready" teams |
+| 3 | `phase3-team-step1.png` | Team registration, step 1 |
+| 4 | `phase4-team-step2.png` | Member entry form (6 members, gender dropdowns) |
+| 5 | `phase5-ps-search.png` | Problem-statement search with results for one SIH number |
+| 6 | `phase6-mentors.png` | Mentor load table + assign / auto-assign |
+| 7 | `phase7-deliverables.png` | Four deliverables with link + status chips |
+| 8 | `phase8-printable-report.png` | Printable status report (for institute records) |
+| 9 | `phase9-mobile-dashboard.png` | Dashboard on a phone screen |
 
-Rules: max 2 columns × 2 rows of cards per slide; max 5 bullets per card;
-sentence case bullets; numbers in monospace; no clip-art, no stock photos.
 
----
-
-## 2. Slide-by-slide content
+## 4. The 8 slides
 
 ### Slide 1 — Title
-- Eyebrow: `SMART INDIA HACKATHON 2026 | COMMAND CENTER`
-- Title (36pt, white, Georgia): **Centralised SPOC Operations & Deliverable Engine**
-- Sub: Production-grade MERN architecture · Hardened validation · Stress-tested concurrency · Zero-loss demo mode
-- Org: Woxsen University | B.Tech CSE SEM 5 | Full Stack Development (24TU05MJC1)
-- Team line: Team of 4 — Lead Integrator · Frontend Engineer · Backend Engineer · QA & Reliability Lead
+- Eyebrow: `WOXSEN · SMART INDIA HACKATHON 2026`
+- Title: **SIH Command Center** — one place to track every hackathon team
+- Sub: Team register · Problem statements · Mentors · Deliverable deadlines
+- Footer: Woxsen University | B.Tech CSE SEM 5 | Full Stack Development | Team of 4
 
-### Slide 2 — The SPOC Operational Bottleneck & Technical Objectives
-Left card — **Current Failure Modes (Spreadsheet Hell)** (red markers):
-- Silent Composition Violations — Excel cannot enforce atomic pre-commit validation of the 6-member / 1-female SIH rule.
-- Problem Statement Clashing — duplicate allocations across silos with no shared uniqueness constraint.
-- Unbalanced Mentor Saturation — mentor-to-team load is tracked manually, if at all.
-- Unquantified Readiness — no continuous score for GitHub / PPT / video / report; SPOC opens every Drive by hand.
+### Slide 2 — Why this was needed
+Left card — **Today's mess** (red bullets):
+- Teams tracked in spreadsheets + WhatsApp — errors found too late
+- Two teams can pick the same problem statement
+- No clear view of which mentor is overloaded
+- Nobody knows a team's real progress until it's too late
 
-Right card — **System Requirements & Design Guarantees** (green checkmarks):
-- Atomic Hard-Blocking Validation — HTTP 400 rejection of bad rosters before persistence.
-- Real-time Duplicate Prevention — unique lock per PS id with explicit SPOC override flag.
-- Heuristic Auto-Allocation — least-loaded mentor assignment under max-capacity limits.
-- Multi-factor Readiness Matrix — 25% per approved artifact, −25% penalty for missing mentor or invalid team.
-- Resilient Fallback Mode — zero-config in-memory demo with hot-switch MongoDB persistence.
+Right card — **What we built** (green bullets):
+- The app checks every team rule the moment it's entered
+- A problem statement can be held by only one team at a time
+- Each mentor's workload is visible, with a one-click auto-assign
+- Every team gets a live "readiness score" out of 100
 
-### Slide 3 — High-Level Architecture & Persistence Strategy
-Three columns:
-1. **Client Tier (Zero-Build)** — 5 responsive HTML views; unified async fetch bridge; `esc()` sanitization on every render; media queries at 390–640px.
-2. **API Engine (Express)** — 15 REST routes; JSON shape/size enforcement; live scraper of sih.gov.in; RFC 4180 CSV + printable HTML report exports.
-3. **Dual-Tier Persistence** — in-memory store by default (demo-safe); MongoDB via Mongoose when `MONGO_URI` set; graceful DB-failure fallback; bad payloads return 400/500, never crash.
+Embed: `phase1-dashboard.png`
 
-Bottom strip — **Data Model**: `Teams {id, name, leadEmail, members[6], psId, mentorId}` · `PS {id, code, sihId, title, category, org, takenBy}` · `Mentors {id, name, dept, maxTeams, load}` · `Deliverables {teamId, type, link, status}` (1:4) · `Milestones {id, name, date, daysLeft}`
+### Slide 3 — How it helps (the rules)
+- Exactly 6 members — a team of 5 is rejected instantly
+- At least 1 female member — mandatory SIH rule, also rejected if missing
+- A valid team is saved in one go and automatically gets its 4 deliverable slots
+- Screenshots show the actual error messages an SPOC would see
 
-### Slide 4 — Engineering Deliverables: What Has Been Built
-Four quadrants:
-1. **Team Roster Enforcement** — guided 3-step wizard; server validation exactly 6 + min 1 female; auto-provisions 4 deliverable slots.
-2. **PS Catalog & Live Ingestion** — one-click scraper of official sih.gov.in (242 statements); search by SIH number; duplicate detection with allowDuplicate override; offline pipe-separated bulk import.
-3. **Mentor Assignment Engine** — live load view (current vs maxTeams); one-click auto-assign to least-loaded mentor; full mentors blocked with 400.
-4. **Readiness Dashboard** — 4 items tracked (GitHub, PPT, video, report); readiness = approved/4 − penalties; CSV export + printable PDF-ready report.
+Embed: `phase3-team-step1.png` + `phase4-team-step2.png`
+Caption: "The rule is checked before anything is saved — nothing invalid can slip through."
 
-### Slide 5 — Security Hardening, Error Handling & Concurrency Testing
-Left card — **Vulnerabilities Found & Fixed**:
-- DoS crash — non-array `members` killed the async Node runtime; fixed with type guard + global error handler.
-- Stored XSS — team names executed in `innerHTML`; fixed with `esc()` on backend report + all 5 pages.
-- Link injection — `javascript:` URLs in deliverable links; fixed: only `http(s)` becomes a link.
-- Silent failures — blank pages on network loss; fixed: unified `loadFailed()` banners on every fetch.
+### Slide 4 — Finding the right problem statement
+- One click pulls the official list from sih.gov.in — 242 statements, no manual typing
+- Search by the SIH number or a keyword — results show in seconds
+- Claim a statement; if it's already taken, the app says who holds it
+- The SPOC can deliberately allow a shared statement if needed
 
-Right card — **Empirical Verification** (monospace metrics):
-- `40/40` functional tests — composition, duplicates, countdowns, exports.
-- `27/27` stress tests — 200 GETs in 447 ms (~450 req/s); 50 concurrent in 77 ms, zero drops.
-- Parallel writes — 10 simultaneous team creates, no races or id collisions.
-- `38/38` headless Chrome — 390px + 1280px viewports, zero console errors, zero overflow.
+Embed: `phase5-ps-search.png`
 
-### Slide 6 — Future Roadmap: Production Scaling & Advanced Capabilities
-Three phases:
-- **Phase 1 · Security & Identity** — RBAC (SPOC / mentor / team lead, JWT sessions); OAuth SSO with campus Microsoft 365; immutable audit trails.
-- **Phase 2 · Communication** — SMTP email alerts on revision flags; WhatsApp deadline countdowns; one-click approve links in mentor mail.
-- **Phase 3 · Data & Cloud** — PostgreSQL via Prisma ORM; S3/R2 artifact storage + GitHub verification; Dockerized Coolify deploy with health checks + snapshots.
+### Slide 5 — Mentors without the guesswork
+- Load table shows each mentor's current teams vs. their limit
+- A full mentor is marked — the app refuses to overload them
+- One click assigns a team to whoever is currently freest
+- Changes appear immediately in the dashboard
 
-### Slide 7 — Viva Defense & Live Demonstration Runbook
-Left card — **Live 3-Minute Demo Sequence**:
-1. Rejection — submit 5-member team, show HTTP 400 block.
-2. Happy path — register valid team, wizard reaches Done.
-3. Duplicate guard — claim taken PS, then allowDuplicate override.
-4. Auto-mentor — least-loaded assignment on mentors page.
-5. Readiness climb — approve 2 items, watch score rise.
-6. Export — open CSV in Excel + printable report.
+Embed: `phase6-mentors.png`
 
-Right card — **Anticipated Viva Q&A**:
-- Q: Single-file server? A: Intentional — examiners can read the full request lifecycle in one file.
-- Q: Memory-first DB? A: Demo-safe on any college PC; MongoDB activates via one env var (`MONGO_URI`).
-- Q: No Tailwind? A: Zero-build; pages run straight from disk with no toolchain.
-- Q: Duplicate race? A: Atomic PS uniqueness check before commit; loser gets 400.
+### Slide 6 — Progress you can actually see
+- Four deliverables per team: GitHub repo, presentation, demo video, report
+- Each has a link + status: submitted, needs revision, approved
+- Every approval adds 25% to the team's readiness score
+- One click exports everything as an Excel file or a printable report
 
-### Slide 8 — Project Summary & Engineering Contributions
-Four columns (role / contribution):
-- **Full-Stack / Integrator** — core architecture; dashboard & readiness logic; API wiring & hardening; deployment + live demo.
-- **Frontend Developer** — 5 responsive pages; 3-step team wizard; mobile @390px; validation + `esc()` UI.
-- **Backend Engineer** — 15 REST endpoints; dual-tier Mongoose store; SIH portal scraper; CSV + report exports.
-- **QA & Reliability Lead** — 105 automated cases; stress + browser suites; DoS + XSS audit; PPT + viva kit.
+Embed: `phase7-deliverables.png` (+ small `phase8-printable-report.png`)
+
+### Slide 7 — How we proved it works
+- 105 automated checks — every rule, screen and export tested
+- Fast and stable: about 450 requests handled per second
+- Tested on phone and desktop screens — no layout breaks
+- Security checked and hardened — fake data can't harm the app
+- Works offline on any college PC — no database needed for a demo
+
+Embed: `phase9-mobile-dashboard.png`
+Metric strip (mono font): `105 tests` · `450 req/s` · `390px → desktop` · `242 statements`
+
+### Slide 8 — What's next + who did what
+Left — **Next steps**:
+- Sign-in for SPOC / mentors / students (everyone sees only their own)
+- Automatic email + WhatsApp deadline reminders
+- Long-term: real database and online hosting for the whole campus
+
+Right — **Team of 4**:
+- Lead / Integration — architecture, wiring, demo
+- Frontend — the 5 screens and forms
+- Backend — the rules, list import, exports
+- QA — 105 tests, security checks, this presentation
+
+Close line: **"SIH Command Center — register it right, track it till the finale."**
 
 ---
 
-## 3. Speaker notes (one line per slide)
+## 5. Speaker notes (one line each)
+1. One sentence: what the app is and who it's for.
+2. Name the 4 everyday pains — examiners recognise them instantly.
+3. Demo hook: "watch me try to break it" — the two rejections land here.
+4. Emphasise no manual typing: the official list arrives in one click.
+5. Point at the load numbers: fairness for mentors, visible in one glance.
+6. The readiness score is the headline feature — SPOC never opens Drive again.
+7. Lead with 105 — testing is the credibility slide.
+8. Invite the live demo now; keep the backend visible on screen.
 
-1. Hook: one sentence — "Every SIH team, statement, mentor and deliverable in one scored register."
-2. Name the 4 pain points; promise they're each answered later in the deck.
-3. Point at the persistence box: "memory by default, Mongo by one env var — demo can't fail."
-4. This is the feature checklist — map each quadrant to a PBL requirement.
-5. Lead with the DoS fix: "our own stress test found a crasher; we fixed it before the demo."
-6. Roadmap is sequenced — security first because it gates everything else.
-7. Offer the live demo immediately after this slide; keep the backend terminal visible.
-8. Close with the test total — 105 — then the team split.
-
-## 4. Constraints for the generator
-
-- 16:9; never overflow text off a card — trim bullets rather than shrink below 10pt.
-- Keep exact metric wording (`40/40`, `27/27`, `38/38`, `105`) — numbers are the evidence.
-- Do not invent features, names, or metrics not listed here.
-- Do not show test-junk data (`<img src=x…>`, `bold-name`) in any screenshot or example.
-- No stock photos, no emoji, no clip-art; navy/brass/cream palette only.
+## 6. Constraints for the generator
+- Keep exact numbers: 105 tests · 242 statements · 450 req/s · 25% per deliverable.
+- Plain language only — no code, no framework names, no file paths on slides.
+- Embed only screenshots from `report/shots/` (list in section 3).
+- Trim bullets rather than shrink text below 10pt; never overflow a card.
+- Do not invent features, names, metrics, or dates not listed here.
+- Navy / brass / cream palette only; no clip-art, emoji, or stock imagery.
 
