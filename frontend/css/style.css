@@ -53,6 +53,7 @@ button { font: inherit; font-weight: 600; background: var(--navy); color: #fff; 
 button:hover { background: #2A3A66; }
 button.ghost { background: var(--navy-soft); color: var(--navy); }
 button.ghost:hover { background: #DCE3F0; }
+button:disabled { opacity: .55; cursor: wait; }
 
 /* ---- badges ---- */
 .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid transparent; }

@@ -9,14 +9,21 @@
 <div class="wrap">
 <div class="steps"><div class="step on">Step 1 – Find official PS</div><div class="step">Step 2 – Assign to team</div></div>
 <div class="card">
-<p class="hint">Type the official SIH number (e.g. SIH25001 from sih.gov.in) – the list filters itself.</p>
-<label>Step 1: search by SIH number / title</label><input id="q" placeholder="e.g. 25001 or attendance" oninput="load()">
-<label>Step 2: team + PS</label>
+<p class="sec-label">Step 1 — Find</p>
+<p class="hint">Type the official SIH number (e.g. SIH25001 from sih.gov.in) — matching statements appear below as you type.</p>
+<label>Search by SIH number / title / organisation</label>
+<input id="q" placeholder="e.g. 25001 or attendance" oninput="renderTable()">
+<div id="tres" style="margin-top:10px"></div>
+<p class="mutes" id="qcount" style="margin:6px 0 0"></p>
+</div>
+<div class="card">
+<p class="sec-label">Step 2 — Assign</p>
+<label>Team + PS</label>
 <div class="row"><div><select id="teamSel"></select></div><div><select id="psSel"></select></div></div>
+<div class="row"><div><label>Filter picker</label><select id="fCat2" onchange="renderPicker()"><option value="">All types</option><option value="software">Software</option><option value="hardware">Hardware</option></select></div><div><label>Availability</label><select id="fFree" onchange="renderPicker()"><option value="">All</option><option value="free">Free only</option><option value="taken">Taken only</option></select></div></div>
 <label><input type="checkbox" id="dup" style="width:auto"> allow same PS as another team</label><br><br>
 <button onclick="pick()">Save choice</button> <small id="m"></small>
 </div>
-<div class="card"><table id="t"></table></div>
 <div class="card">
 <h3>One-time: load official SIH list</h3>
 <p class="hint">Needs internet once. Pulls the public table from sih.gov.in (240 statements for 2026).</p>
@@ -30,17 +37,56 @@
 <footer class="footer">SIH Command Center &middot; Woxsen SPOC register &middot; readiness = approved artifacts &minus; penalties</footer>
 <script src="js/app.js"></script>
 <script>
+let PS_CACHE = [];
+function matches(p, q) {
+  q = (q || '').trim().toLowerCase();
+  if (!q) return false;
+  return ((p.sihId || '') + ' ' + (p.code || '') + ' ' + (p.title || '') + ' ' + (p.org || '')).toLowerCase().includes(q);
+}
+function psLabel(p) {
+  return `${p.sihId || p.code} – ${p.title}${p.takenBy ? ' (taken: ' + p.takenBy + ')' : ''}`;
+}
+function renderTable() {
+  const q = document.getElementById('q').value;
+  const box = document.getElementById('tres');
+  const count = document.getElementById('qcount');
+  if (!q.trim()) {
+    box.innerHTML = '';
+    count.textContent = PS_CACHE.length ? PS_CACHE.length + ' statements in the catalog. Type to search.' : '';
+    return;
+  }
+  const hits = PS_CACHE.filter(p => matches(p, q)).slice(0, 20);
+  const extra = PS_CACHE.filter(p => matches(p, q)).length - hits.length;
+  box.innerHTML = hits.length
+    ? '<table><tr><th>SIH No.</th><th>Title</th><th>Type</th><th>Held by</th><th></th></tr>' + hits.map(p =>
+      `<tr><td class="num">${esc(p.sihId || p.code)}</td><td>${esc(p.title)}</td><td>${esc(p.category)}</td><td>${p.takenBy ? esc(p.takenBy) : '<span class="badge ok">free</span>'}</td><td><button class="ghost" onclick="choosePs('${esc(p.id)}')">Use</button></td></tr>`).join('') + '</table>'
+    : emptyRow(1, 'No match. Check the number, or import the list below.');
+  count.textContent = hits.length + ' shown' + (extra > 0 ? ' (+' + extra + ' more — keep typing to narrow)' : '') + '.';
+}
+function choosePs(id) {
+  const sel = document.getElementById('psSel');
+  sel.value = id;
+  showFlash('Statement selected — pick the team and save');
+}
+function pickerList() {
+  const cat = document.getElementById('fCat2').value;
+  const free = document.getElementById('fFree').value;
+  return PS_CACHE.filter(p =>
+    (!cat || p.category === cat) &&
+    (!free || (free === 'free' ? !p.takenBy : !!p.takenBy)));
+}
+function renderPicker() {
+  const list = pickerList().slice(0, 60);
+  document.getElementById('psSel').innerHTML = list.map(p => `<option value="${esc(p.id)}">${esc(psLabel(p))}</option>`).join('') || '<option value="">no match — adjust filters</option>';
+}
 async function load() {
   try {
   const teams = await get('/teams');
-  document.getElementById('teamSel').innerHTML = teams.map(t => `<option value="${esc(t.id)}">${esc(t.teamName)}</option>`).join('');
-  const q = document.getElementById('q').value;
-  const ps = await get('/ps?q=' + encodeURIComponent(q));
-  document.getElementById('psSel').innerHTML = ps.map(p => `<option value="${esc(p.id)}">${esc(p.sihId || p.code)} – ${esc(p.title)}${p.takenBy ? ' (taken: ' + esc(p.takenBy) + ')' : ''}</option>`).join('') || '<option value="">no match – import below</option>';
-  const all = await get('/ps');
-  document.getElementById('t').innerHTML = '<tr><th>SIH No.</th><th>Title</th><th>Type</th><th>Org</th><th>Held by</th></tr>' +
-    (all.map(p => `<tr><td class="num">${esc(p.sihId || p.code)}</td><td>${esc(p.title)}</td><td>${esc(p.category)}</td><td>${esc(p.org)}</td><td>${p.takenBy ? esc(p.takenBy) : '<span class="badge ok">free</span>'}</td></tr>`).join('') || emptyRow(5, 'Catalog is empty — fetch the official list below.'));
-  } catch (e) { loadFailed('t', e); }
+  document.getElementById('teamSel').innerHTML = teams.map(t => `<option value="${esc(t.id)}">${esc(t.teamName)}</option>`).join('') || '<option value="">no teams — register one first</option>';
+  PS_CACHE = await get('/ps');
+  renderTable();
+  renderPicker();
+  } catch (e) { loadFailed('tres', e); }
 }
 async function pick() {
   try {
@@ -59,12 +105,21 @@ async function bulk() {
   } catch (e) { document.getElementById('bm').textContent = e.message; showFlash(e.message, 'bad'); }
 }
 async function fetchOfficial() {
-  document.getElementById('fm').textContent = 'Fetching… (takes ~10 sec)';
+  const btn = document.querySelector('button[onclick="fetchOfficial()"]');
+  btn.disabled = true; btn.textContent = 'Fetching…';
+  document.getElementById('fm').textContent = 'Fetching live from sih.gov.in (takes ~10 sec)…';
   try {
     const r = await post('/ps/fetch-official', { edition: document.getElementById('edition').value });
-    document.getElementById('fm').textContent = r.added + ' new, ' + r.skipped + ' already had, ' + r.total + ' total.';
+    if (r.added === 0) {
+      document.getElementById('fm').textContent = 'Already up to date — ' + r.total + ' statements in the catalog.';
+      showFlash('Catalog already up to date (' + r.total + ')');
+    } else {
+      document.getElementById('fm').textContent = r.added + ' new, ' + r.skipped + ' already had, ' + r.total + ' total.';
+      showFlash(r.added + ' new statements fetched');
+    }
     load();
-  } catch (e) { document.getElementById('fm').textContent = e.message; }
+  } catch (e) { document.getElementById('fm').textContent = e.message; showFlash(e.message, 'bad'); }
+  btn.disabled = false; btn.textContent = 'Fetch from sih.gov.in';
 }
 load();
 </script></body></html>
