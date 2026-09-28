@@ -51,20 +51,16 @@ detail. Output: 8 slides, 16:9.
 - Sub: Team register · Problem statements · Mentors · Deliverable deadlines
 - Footer: Woxsen University | B.Tech CSE SEM 5 | Full Stack Development | Team of 4
 
-### Slide 2 — Why this was needed
-Left card — **Today's mess** (red bullets):
-- Teams tracked in spreadsheets + WhatsApp — errors found too late
-- Two teams can pick the same problem statement
-- No clear view of which mentor is overloaded
-- Nobody knows a team's real progress until it's too late
-
-Right card — **What we built** (green bullets):
-- The app checks every team rule the moment it's entered
-- A problem statement can be held by only one team at a time
-- Each mentor's workload is visible, with a one-click auto-assign
-- Every team gets a live "readiness score" out of 100
+### Slide 2 — What we built (overview)
+- One web app for the SPOC: five screens, no installation, works offline
+- Register a team → the rules check themselves, instantly
+- Pick a problem statement from the official list, held by one team only
+- See every mentor's load and assign in one click
+- Track 4 deliverables per team and get a live readiness score (0–100)
+- Export the whole register as Excel or a printable report in one click
 
 Embed: `phase1-dashboard.png`
+(If space allows, small second image: `phase2-dashboard-filtered.png`)
 
 ### Slide 3 — How it helps (the rules)
 - Exactly 6 members — a team of 5 is rejected instantly
@@ -127,7 +123,7 @@ Close line: **"SIH Command Center — register it right, track it till the final
 
 ## 5. Speaker notes (one line each)
 1. One sentence: what the app is and who it's for.
-2. Name the 4 everyday pains — examiners recognise them instantly.
+2. Walk the overview top-to-bottom — this is the map of the four deep-dive slides that follow.
 3. Demo hook: "watch me try to break it" — the two rejections land here.
 4. Emphasise no manual typing: the official list arrives in one click.
 5. Point at the load numbers: fairness for mentors, visible in one glance.
