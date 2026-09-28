@@ -1,7 +1,12 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Mentors</title><link rel="stylesheet" href="css/style.css"></head><body>
-<nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html" class="on">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
+<nav><div class="nav-in"><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html" class="on">Mentors</a><a href="deliverables.html">Deliverables</a></div></nav>
+<header class="mast">
+<p class="mast-eyebrow">Load &amp; assignment</p>
+<h1>Assign a mentor</h1>
+<p class="mast-sub">See every mentor's load at a glance, then balance the next team onto the freest desk.</p>
+<hr class="mast-rule">
+</header>
 <div class="wrap">
-<h2>Assign a mentor</h2>
 <div class="steps"><div class="step on">Step 1 – See load</div><div class="step">Step 2 – Assign</div></div>
 <div class="card"><table id="t"></table>
 <p><small>Load shows teams per mentor. Full mentors are blocked automatically.</small></p></div>
@@ -12,6 +17,7 @@
 <button onclick="assign()">Assign chosen</button>
 <button class="ghost" onclick="autoAssign()">Auto-assign free-est</button> <small id="m"></small>
 </div></div>
+<footer class="footer">SIH Command Center &middot; Woxsen SPOC register &middot; readiness = approved artifacts &minus; penalties</footer>
 <script src="js/app.js"></script>
 <script>
 async function load() {
@@ -21,20 +27,23 @@ async function load() {
   const ms = await get('/mentors');
   document.getElementById('mentorSel').innerHTML = ms.map(x => `<option value="${esc(x.id)}">${esc(x.name)} – ${x.load}/${x.maxTeams}</option>`).join('');
   document.getElementById('t').innerHTML = '<tr><th>Name</th><th>Dept</th><th>Load</th></tr>' +
-    ms.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.dept)}</td><td>${x.load}/${x.maxTeams}</td></tr>`).join('');
+    (ms.map(x => {
+      const full = x.load >= x.maxTeams;
+      return `<tr><td>${esc(x.name)}</td><td>${esc(x.dept)}</td><td><span class="num">${x.load}/${x.maxTeams}</span> ${full ? '<span class="badge bad">full</span>' : '<span class="badge ok">open</span>'}</td></tr>`;
+    }).join('') || emptyRow(3, 'No mentors registered yet.'));
   } catch (e) { loadFailed('t', e); }
 }
 async function assign() {
   try {
     const t = await post(`/teams/${document.getElementById('teamSel').value}/assign-mentor`, { mentorId: document.getElementById('mentorSel').value });
-    document.getElementById('m').textContent = t.teamName + ' → ' + t.mentorName; load();
-  } catch (e) { document.getElementById('m').textContent = e.message; }
+    document.getElementById('m').textContent = t.teamName + ' → ' + t.mentorName; showFlash(t.teamName + ' assigned to ' + t.mentorName); load();
+  } catch (e) { document.getElementById('m').textContent = e.message; showFlash(e.message, 'bad'); }
 }
 async function autoAssign() {
   try {
     const t = await post(`/teams/${document.getElementById('teamSel').value}/auto-mentor`, {});
-    document.getElementById('m').textContent = t.teamName + ' → ' + t.mentorName; load();
-  } catch (e) { document.getElementById('m').textContent = e.message; }
+    document.getElementById('m').textContent = t.teamName + ' → ' + t.mentorName; showFlash(t.teamName + ' assigned to ' + t.mentorName); load();
+  } catch (e) { document.getElementById('m').textContent = e.message; showFlash(e.message, 'bad'); }
 }
 load();
 </script></body></html>

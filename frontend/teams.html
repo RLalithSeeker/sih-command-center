@@ -1,7 +1,12 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Teams – step by step</title><link rel="stylesheet" href="css/style.css"></head><body>
-<nav><a href="index.html">Dashboard</a><a href="teams.html" class="on">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
+<nav><div class="nav-in"><a href="index.html">Dashboard</a><a href="teams.html" class="on">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></div></nav>
+<header class="mast">
+<p class="mast-eyebrow">Roster &amp; eligibility</p>
+<h1>Register a team</h1>
+<p class="mast-sub">Exactly six members, at least one female — the ledger rejects anything else.</p>
+<hr class="mast-rule">
+</header>
 <div class="wrap">
-<h2>Register a team</h2>
 <div class="steps"><div class="step on" id="s1">Step 1 – Team</div><div class="step" id="s2">Step 2 – Members</div><div class="step" id="s3">Step 3 – Done</div></div>
 <div class="card" id="box1">
 <p class="hint">Start here. One team = exactly 6 members, at least 1 female (SIH rule).</p>
@@ -23,6 +28,7 @@
 </div>
 <div class="card"><h3>All teams</h3><div id="list"></div></div>
 </div>
+<footer class="footer">SIH Command Center &middot; Woxsen SPOC register &middot; readiness = approved artifacts &minus; penalties</footer>
 <script src="js/app.js"></script>
 <script>
 const box = document.getElementById('members');
@@ -50,16 +56,18 @@ async function submitTeam() {
   try {
     const t = await post('/teams', { teamName: document.getElementById('tn').value, leadEmail: document.getElementById('le').value, members });
     document.getElementById('doneBody').textContent = t.teamName + ' is valid. ' + t.members.length + ' members, composition OK.';
+    showFlash(t.teamName + ' registered');
     go(3); load();
-  } catch (e) { document.getElementById('m2').textContent = e.message; }
+  } catch (e) { document.getElementById('m2').textContent = e.message; showFlash(e.message, 'bad'); }
 }
 
 async function load() {
   try {
   const teams = await get('/teams');
-  document.getElementById('list').innerHTML = teams.map(t =>
-    `<p><b>${esc(t.teamName)}</b> – ${esc(t.compositionError || 'valid')} – PS: ${esc(t.psTitle)} – Mentor: ${esc(t.mentorName)}</p>`
+  const rows = teams.map(t =>
+    `<div class="team-row">${dial(t.readiness)}<div class="team-meta"><b>${esc(t.teamName)}</b><div class="sub">${esc(t.compositionError || 'valid')} &middot; PS: ${esc(t.psTitle)} &middot; Mentor: ${esc(t.mentorName)}</div></div></div>`
   ).join('');
+  document.getElementById('list').innerHTML = rows || '<p class="mutes" style="margin:4px 0">No teams yet — register the first one above.</p>';
   } catch (e) { loadFailed('list', e); }
 }
 load();

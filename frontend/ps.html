@@ -1,7 +1,12 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Problem statements</title><link rel="stylesheet" href="css/style.css"></head><body>
-<nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html" class="on">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
+<nav><div class="nav-in"><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html" class="on">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></div></nav>
+<header class="mast">
+<p class="mast-eyebrow">Catalog &amp; claims</p>
+<h1>Pick a problem statement</h1>
+<p class="mast-sub">Search the official SIH number, claim it once, and the ledger remembers who holds it.</p>
+<hr class="mast-rule">
+</header>
 <div class="wrap">
-<h2>Pick a problem statement</h2>
 <div class="steps"><div class="step on">Step 1 – Find official PS</div><div class="step">Step 2 – Assign to team</div></div>
 <div class="card">
 <p class="hint">Type the official SIH number (e.g. SIH25001 from sih.gov.in) – the list filters itself.</p>
@@ -22,6 +27,7 @@
 <button class="ghost" onclick="bulk()">Import pasted list</button> <small id="bm"></small>
 </div>
 </div>
+<footer class="footer">SIH Command Center &middot; Woxsen SPOC register &middot; readiness = approved artifacts &minus; penalties</footer>
 <script src="js/app.js"></script>
 <script>
 async function load() {
@@ -33,22 +39,24 @@ async function load() {
   document.getElementById('psSel').innerHTML = ps.map(p => `<option value="${esc(p.id)}">${esc(p.sihId || p.code)} – ${esc(p.title)}${p.takenBy ? ' (taken: ' + esc(p.takenBy) + ')' : ''}</option>`).join('') || '<option value="">no match – import below</option>';
   const all = await get('/ps');
   document.getElementById('t').innerHTML = '<tr><th>SIH No.</th><th>Title</th><th>Type</th><th>Org</th><th>Held by</th></tr>' +
-    all.map(p => `<tr><td>${esc(p.sihId || p.code)}</td><td>${esc(p.title)}</td><td>${esc(p.category)}</td><td>${esc(p.org)}</td><td>${p.takenBy ? esc(p.takenBy) : '– free'}</td></tr>`).join('');
+    (all.map(p => `<tr><td class="num">${esc(p.sihId || p.code)}</td><td>${esc(p.title)}</td><td>${esc(p.category)}</td><td>${esc(p.org)}</td><td>${p.takenBy ? esc(p.takenBy) : '<span class="badge ok">free</span>'}</td></tr>`).join('') || emptyRow(5, 'Catalog is empty — fetch the official list below.'));
   } catch (e) { loadFailed('t', e); }
 }
 async function pick() {
   try {
     const t = await post(`/teams/${document.getElementById('teamSel').value}/select-ps`, { psId: document.getElementById('psSel').value, allowDuplicate: document.getElementById('dup').checked });
     document.getElementById('m').textContent = t.teamName + ' now on ' + t.psTitle;
+    showFlash(t.teamName + ' claimed ' + t.psTitle);
     load();
-  } catch (e) { document.getElementById('m').textContent = e.message; }
+  } catch (e) { document.getElementById('m').textContent = e.message; showFlash(e.message, 'bad'); }
 }
 async function bulk() {
   try {
     const r = await post('/ps/bulk', { lines: document.getElementById('bulk').value });
     document.getElementById('bm').textContent = r.added + ' added, ' + r.total + ' total.';
+    showFlash(r.added + ' statements imported');
     load();
-  } catch (e) { document.getElementById('bm').textContent = e.message; }
+  } catch (e) { document.getElementById('bm').textContent = e.message; showFlash(e.message, 'bad'); }
 }
 async function fetchOfficial() {
   document.getElementById('fm').textContent = 'Fetching… (takes ~10 sec)';

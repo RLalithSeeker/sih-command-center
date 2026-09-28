@@ -1,7 +1,12 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Deliverables</title><link rel="stylesheet" href="css/style.css"></head><body>
-<nav><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html" class="on">Deliverables</a></nav>
+<nav><div class="nav-in"><a href="index.html">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html" class="on">Deliverables</a></div></nav>
+<header class="mast">
+<p class="mast-eyebrow">Artifacts &amp; approval</p>
+<h1>Track deliverables</h1>
+<p class="mast-sub">Paste the link, set the verdict — approved items move the readiness dial.</p>
+<hr class="mast-rule">
+</header>
 <div class="wrap">
-<h2>Track deliverables</h2>
 <div class="steps"><div class="step on">Step 1 – Open team</div><div class="step">Step 2 – Update item</div></div>
 <div class="card">
 <label>Team</label><select id="teamSel" onchange="load()"></select>
@@ -14,6 +19,7 @@
 <input id="dlink" placeholder="Link (https://…)">
 <button onclick="save()">Save</button>
 </div></div>
+<footer class="footer">SIH Command Center &middot; Woxsen SPOC register &middot; readiness = approved artifacts &minus; penalties</footer>
 <script src="js/app.js"></script>
 <script>
 async function init() {
@@ -28,17 +34,19 @@ async function load() {
   if (!id) return;
   try {
   const d = await get('/deliverables/' + id);
+  const chip = s => s === 'approved' ? '<span class="badge ok">approved</span>' : s === 'submitted' ? '<span class="badge warn">submitted</span>' : s === 'needs_revision' ? '<span class="badge bad">needs revision</span>' : '<span class="badge">not submitted</span>';
   document.getElementById('t').innerHTML = '<tr><th>Item</th><th>Link</th><th>Status</th></tr>' +
-    d.map(x => `<tr><td>${esc(x.type)}</td><td>${/^https?:\/\//.test(x.link || '') ? '<a href="' + esc(x.link) + '" target="_blank">' + esc(x.link) + '</a>' : (x.link ? esc(x.link) : '– missing')}</td><td>${esc(x.status)}</td></tr>`).join('');
+    (d.map(x => `<tr><td>${esc(x.type)}</td><td>${/^https?:\/\//.test(x.link || '') ? '<a href="' + esc(x.link) + '" target="_blank">' + esc(x.link) + '</a>' : (x.link ? esc(x.link) : '<span class="mutes">missing</span>')}</td><td>${chip(x.status)}</td></tr>`).join('') || emptyRow(3, 'No deliverables for this team.'));
   } catch (e) { loadFailed('t', e); }
 }
 async function save() {
   const fb = document.getElementById('dlink');
   try {
     await put('/deliverables/' + document.getElementById('teamSel').value, { type: document.getElementById('dtype').value, link: document.getElementById('dlink').value, status: document.getElementById('dstatus').value });
-    fb.value = ''; fb.placeholder = 'Saved ✓';
+    fb.value = ''; fb.placeholder = 'Link (https://…)';
+    showFlash('Deliverable saved');
     load();
-  } catch (e) { fb.placeholder = e.message; }
+  } catch (e) { showFlash(e.message, 'bad'); }
 }
 init();
 </script></body></html>

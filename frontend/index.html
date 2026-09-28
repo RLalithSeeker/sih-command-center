@@ -1,8 +1,14 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SIH Command Center</title>
 <link rel="stylesheet" href="css/style.css"></head><body>
-<nav><a href="index.html" class="on">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></nav>
+<nav><div class="nav-in"><a href="index.html" class="on">Dashboard</a><a href="teams.html">Teams</a><a href="ps.html">Problem Statements</a><a href="mentors.html">Mentors</a><a href="deliverables.html">Deliverables</a></div></nav>
+<header class="mast">
+<p class="mast-eyebrow">Woxsen &middot; SIH 2026 &middot; SPOC Register</p>
+<h1>Command Ledger</h1>
+<p class="mast-sub">Every team, every statement, every mentor — scored and current.</p>
+<hr class="mast-rule">
+</header>
 <div class="wrap">
-<h2>SPOC Dashboard</h2>
+<h2 class="mutes" style="font-weight:400">SPOC Dashboard</h2>
 <div class="hint">For teachers: 1) check pending teams below, 2) open the team page to fix, 3) export CSV for records. <a href="teams.html">Start with Teams →</a></div>
 <div class="card"><h3>Deadlines</h3><div id="ms"></div>
 <div class="row"><div><input id="msName" placeholder="New milestone (e.g. PPT freeze)"></div><div><input id="msDate" type="date"></div><div><button onclick="addMs()">Add</button></div></div></div>
@@ -17,15 +23,17 @@
 <a href="http://localhost:5000/api/export.csv"><button>Export Excel (CSV)</button></a>
 <a href="http://localhost:5000/api/report.html" target="_blank"><button class="ghost">Open printable report (save as PDF)</button></a></div>
 </div>
+<footer class="footer">SIH Command Center &middot; Woxsen SPOC register &middot; readiness = approved artifacts &minus; penalties</footer>
 <script src="js/app.js"></script>
 <script>
 async function load() {
   try {
   const ms = await get('/milestones');
-  document.getElementById('ms').innerHTML = ms.map(m =>
-    `<p><b>${esc(m.name)}</b> – ${esc(m.date)} – ` +
+  const msRows = ms.map(m =>
+    `<p><b>${esc(m.name)}</b> &ndash; <span class="num">${esc(m.date)}</span> &ndash; ` +
     (m.daysLeft < 0 ? `<span class="badge bad">overdue ${-m.daysLeft}d</span>` : m.daysLeft === 0 ? '<span class="badge warn">today</span>' : `<span class="badge ${m.daysLeft <= 7 ? 'warn' : 'ok'}">${m.daysLeft} days left</span>`) +
     `</p>`).join('');
+  document.getElementById('ms').innerHTML = msRows || '<p class="mutes" style="margin:4px 0">No deadlines yet — add the first milestone above.</p>';
   const params = new URLSearchParams(location.search);
   ['fMentor', 'fCat', 'fStatus'].forEach(id => {
     const map = { fMentor: 'mentor', fCat: 'category', fStatus: 'status' };
@@ -39,23 +47,22 @@ async function load() {
   const q = `?mentor=${document.getElementById('fMentor').value}&category=${document.getElementById('fCat').value}&status=${document.getElementById('fStatus').value}`;
   history.replaceState(null, '', location.pathname + q);
   const d = await get('/dashboard' + q);
-  document.getElementById('t').innerHTML = '<tr><th>Team</th><th>PS</th><th>Mentor</th><th>Check</th><th>Pending items</th><th>Ready</th></tr>' +
-    d.teams.map(t => {
+  const rows = d.teams.map(t => {
       const pending = t.deliverables.filter(x => x.status !== 'approved').map(x => esc(x.type)).join(', ') || 'none';
-      return `<tr><td><b>${esc(t.teamName)}</b></td><td>${esc(t.psTitle)}</td><td>${esc(t.mentorName)}</td>
-      <td>${t.compositionError ? `<span class="badge bad">${esc(t.compositionError)}</span>` : '<span class="badge ok">Team OK</span>'}</td>
-      <td>${pending}</td><td><b>${t.readiness}%</b></td></tr>`;
+      return `<div class="team-row">${dial(t.readiness)}<div class="team-meta"><b>${esc(t.teamName)}</b><div class="sub">${esc(t.psTitle)} &middot; ${esc(t.mentorName)}</div><div class="sub">${t.compositionError ? `<span class="badge bad">${esc(t.compositionError)}</span>` : '<span class="badge ok">Team OK</span>'} &middot; pending: ${pending}</div></div></div>`;
     }).join('');
+  document.getElementById('t').innerHTML = rows || emptyRow(1, 'No teams match these filters. Register one on the Teams page.');
   document.getElementById('rem').innerHTML = d.pendingReminders.map(r => `<p><b>${esc(r.team)}</b> (${esc(r.lead)}) – waiting on: ${r.missing.map(esc).join(', ')}</p>`).join('') || '<p>All teams ready.</p>';
   } catch (e) { loadFailed('t', e); loadFailed('ms', e); }
 }
 async function addMs() {
-  const btnFeedback = document.getElementById('msName');
+  const nameEl = document.getElementById('msName');
   try {
-    await post('/milestones', { name: document.getElementById('msName').value, date: document.getElementById('msDate').value });
-    btnFeedback.value = '';
+    await post('/milestones', { name: nameEl.value, date: document.getElementById('msDate').value });
+    nameEl.value = '';
+    showFlash('Milestone added');
     load();
-  } catch (e) { btnFeedback.placeholder = e.message; btnFeedback.value = ''; }
+  } catch (e) { showFlash(e.message, 'bad'); }
 }
 load();
 </script></body></html>
