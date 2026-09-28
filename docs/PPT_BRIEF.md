@@ -4,29 +4,62 @@ Source of truth for generating the presentation deck. Audience: faculty examiner
 and SPOC stakeholders — explain WHAT and WHY in plain language, not implementation
 detail. Output: 8 slides, 16:9.
 
-## 1. Tone rules (most important)
+## 1. Writing rules (the part that matters most)
 
-- Write for a smart non-programmer. If a term needs a CS degree, replace it with plain words.
+- Write for a smart non-programmer. If a term needs a CS degree, say it in plain words.
 - Good: "The app rejects a team of 5 — the rule is enforced before anything is saved."
 - Bad: "Array.isArray guard + global Express error interceptor."
-- One idea per bullet, max 14 words. No acronyms without a one-word gloss.
-- Numbers are fine and impressive: 242 statements, 105 tests, 450 requests/sec.
-- Never show code, file names, framework internals, or Git history.
+- One idea per bullet, max 14 words, sentence case, start the bullet with "- ".
+- Bullets state outcomes, never mechanisms: "one click assigns the freest mentor", not "least-loaded heuristic".
+- Numbers stay, because they are the evidence: 105 checks · 242 statements · 450 req/sec · 25% per deliverable.
+- Ban on slides: code, file names, framework names, database names, Git history, acronyms without a plain gloss.
+- Read every bullet aloud once. If you stumble, cut it.
+- Each slide must survive being read from the back of the room: 5 bullets max, 6 on the overview slide only.
 
-## 2. Design system
+## 2. Design system (exact values — copy these)
+
+Slide size 13.333 × 7.5 in (16:9).
 
 | Token | Value |
 |---|---|
-| Paper / card background | `#F6F1E7` paper, `#FFFDF8` cards |
-| Headings | deep navy `#1E2A4A`, Georgia serif |
-| Accent | brass `#A96B1B` (eyebrow labels, thin rules) |
-| Body text | `#334155`, system sans, sentence case |
-| Green `#2F7D4F` | guarantees, passing results |
-| Red `#B3352B` | problems, blocked actions |
-| Data (numbers, IDs) | monospace |
-| Title slide | navy `#0F172A` full-bleed, white text |
-| Layout | max 4 cards per slide, max 5 short bullets per card, 10pt floor |
-| Imagery | only the app screenshots listed below — no clip-art, no stock photos, no emoji |
+| Slide paper | `#F6F1E7` |
+| Card fill / border | `#FFFDF8` / `#E3DCCB` |
+| Heading navy | `#1E2A4A` |
+| Brass accent | `#A96B1B` |
+| Body text | `#334155` |
+| Muted text | `#78808F` |
+| Title-slide background | `#0F172A`; title `#FFFFFF`; subtitle `#C8D2E6`; meta lines `#96A5C3` |
+| Metric strip | `#1E2A4A` fill, white mono text |
+| Green / red | `#2F7D4F` / `#B3352B` (results and warnings only) |
+
+Type (fonts must exist on any Windows PC — no web fonts to install):
+- Slide title: Georgia bold, 25pt, navy
+- Eyebrow above title: Consolas, 10.5pt, UPPERCASE, brass
+- Bullets: Arial 14pt (13pt in side-by-side cards), line spacing 1.15, 9pt after each bullet
+- Emphasis / body in cards: Arial 12–13pt
+- Numbers, IDs, metrics: Consolas bold (13.5–15pt)
+- Title slide: eyebrow 13pt brass · title 46pt Georgia bold white · subtitle 18pt · meta 13pt
+- Closing line: Georgia bold 15pt brass
+- Smallest size allowed anywhere: 12pt
+
+Geometry grid (inches from the top-left):
+- Side margins 0.75; content width 11.85; vertical safe band 0.35 → 7.20
+- Eyebrow at y=0.35, title at y=0.68, brass rule at y=1.42 (11.85 wide, 2.5pt thick)
+- Content slides: bullets column starts x=0.75, y=1.75, width = 12.0 − image width − 0.4
+- Images: right-aligned at x = 12.6 − image width, starting y=1.75, with a 1pt `#E3DCCB` border
+- Standard image width 5.65 (a 4:3 screenshot becomes 3.97 tall)
+- Two stacked images: crop each to ≈66% height, keep a 0.12 gap, verify y_end = y + width × aspect before saving
+- Phone screenshot: width 1.95, portrait, no crop
+- Metric strip: rounded rectangle 4.4 × 0.95 at (8.15, 6.20)
+- Closing line: x=0.75, y=6.45
+- Slide 8: two equal cards 5.9 and 5.75 wide × 4.5 tall at y=1.75
+
+Image treatment rules:
+- Never stretch an image — set width only, let height follow the aspect ratio, then check the bottom edge fits the safe band.
+- Never let an image end mid-element: pick the crop height, then snap the cut to the flattest (blank) row within ±18% of it.
+- Max 2 images per slide; they must never overlap each other or the bullets.
+- Only real screenshots from `report/shots/` — no mockups, clip-art, stock photos, icons or emoji.
+
 
 ## 3. Screenshots to embed (ready in `report/shots/`)
 
@@ -131,11 +164,24 @@ Close line: **"SIH Command Center — register it right, track it till the final
 7. Lead with 105 — testing is the credibility slide.
 8. Invite the live demo now; keep the backend visible on screen.
 
-## 6. Constraints for the generator
-- Keep exact numbers: 105 tests · 242 statements · 450 req/s · 25% per deliverable.
-- Plain language only — no code, no framework names, no file paths on slides.
-- Embed only screenshots from `report/shots/` (list in section 3).
-- Trim bullets rather than shrink text below 10pt; never overflow a card.
-- Do not invent features, names, metrics, or dates not listed here.
-- Navy / brass / cream palette only; no clip-art, emoji, or stock imagery.
+## 6. Build constraints
+
+- Reference implementation: `ppt/make_ppt.py` builds this exact deck — read it before generating anything; match it rather than inventing a new look.
+- Colour, size and coordinate values in section 2 are not suggestions. Copy them.
+- Verify before finishing: render the slides and look at them (PowerPoint can export slides to images). Fix overlaps, mid-element crops and text that runs off a card before claiming done.
+- Trim bullets rather than shrink text below 12pt; never let text leave its card.
+- Do not invent features, names, metrics or dates that are not listed in this brief.
+- Embed only screenshots from `report/shots/`, and keep the numbers exact: 105 checks · 242 statements · 450 req/sec · 25% per deliverable.
+- No clip-art, emoji, stock imagery, gradients, drop shadows or decorative icon rows.
+- Keep slide count at 8 with the section 4 running order.
+
+## 7. Regenerate the deck
+
+```
+python ppt/make_ppt.py        # rebuilds ppt/SIH_Command_Center.pptx from report/shots/
+```
+The script crops tall screenshots automatically (snapping cuts to blank rows) and
+writes 8 slides. Requires Pillow. To refresh the screenshots themselves first:
+`node backend/shots.js` (needs the backend on port 5000 and the frontend on port 8080).
+
 
