@@ -46,6 +46,15 @@ function matches(p, q) {
 function psLabel(p) {
   return `${p.sihId || p.code} – ${p.title}${p.takenBy ? ' (taken: ' + p.takenBy + ')' : ''}`;
 }
+// short readable picker label: decode scrape entities + cap title at ~64 chars
+function psShort(p) {
+  let t = String(p.title || '');
+  const ta = document.createElement('textarea');
+  ta.innerHTML = t;
+  t = ta.value;
+  if (t.length > 64) t = t.slice(0, 63).trimEnd() + '…';
+  return `SIH ${(p.sihId || p.code || '').replace(/^SIH/i, '')} – ${t}${p.takenBy ? ' (taken)' : ''}`;
+}
 function renderTable() {
   const q = document.getElementById('q').value;
   const box = document.getElementById('tres');
@@ -59,7 +68,7 @@ function renderTable() {
   const extra = PS_CACHE.filter(p => matches(p, q)).length - hits.length;
   box.innerHTML = hits.length
     ? '<table><tr><th>SIH No.</th><th>Title</th><th>Type</th><th>Held by</th><th></th></tr>' + hits.map(p =>
-      `<tr><td class="num">${esc(p.sihId || p.code)}</td><td>${esc(p.title)}</td><td>${esc(p.category)}</td><td>${p.takenBy ? esc(p.takenBy) : '<span class="badge ok">free</span>'}</td><td><button class="ghost" onclick="choosePs('${esc(p.id)}')">Use</button></td></tr>`).join('') + '</table>'
+      `<tr><td class="num">${esc(p.sihId || p.code)}</td><td>${esc(p.title)}</td><td>${esc(p.category)}</td><td>${p.takenBy ? esc(p.takenBy) : '<span class="badge ok">free</span>'}</td><td><button class="ghost" data-psid="${esc(p.id)}" onclick="choosePs(this.dataset.psid)">Use</button></td></tr>`).join('') + '</table>'
     : emptyRow(1, 'No match. Check the number, or import the list below.');
   count.textContent = hits.length + ' shown' + (extra > 0 ? ' (+' + extra + ' more — keep typing to narrow)' : '') + '.';
 }
@@ -76,8 +85,11 @@ function pickerList() {
     (!free || (free === 'free' ? !p.takenBy : !!p.takenBy)));
 }
 function renderPicker() {
-  const list = pickerList().slice(0, 60);
-  document.getElementById('psSel').innerHTML = list.map(p => `<option value="${esc(p.id)}">${esc(psLabel(p))}</option>`).join('') || '<option value="">no match — adjust filters</option>';
+  const list = pickerList().slice(0, 100);
+  document.getElementById('psSel').innerHTML = list.map(p => {
+    const full = psLabel(p);
+    return `<option value="${esc(p.id)}" title="${esc(full)}">${esc(psShort(p))}</option>`;
+  }).join('') || '<option value="">no match — adjust filters</option>';
 }
 async function load() {
   try {
